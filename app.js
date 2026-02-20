@@ -274,16 +274,14 @@ async function submitAbsensi(kelas) {
   const hadir = Object.values(s.attendance).filter(Boolean).length;
   const total = s.students.length;
 
-  // Konfirmasi kalau 0 yang hadir
-  if (hadir === 0) {
-    if (!confirm(`Semua ${total} anak ditandai Absen. Yakin simpan?`)) return;
-  }
+  // Hanya kirim yang hadir - yang absen tidak perlu dicatat di sheet
+  const rows = s.students
+    .filter(stu => s.attendance[stu.id])
+    .map(stu => ({ tanggal, sesi: `Sesi ${sesi}`, kelas, nama: stu.nama, status: 'Hadir' }));
 
-  const rows = s.students.map(stu => ({
-    tanggal, sesi: `Sesi ${sesi}`, kelas,
-    nama:   stu.nama,
-    status: s.attendance[stu.id] ? 'Hadir' : 'Absen',
-  }));
+  if (rows.length === 0) {
+    if (!confirm('Belum ada anak yang ditandai hadir. Tetap simpan?')) return;
+  }
 
   showLoading(`Menyimpan absensi Kelas ${capitalize(kelas)} Sesi ${sesi}...`);
   try {
@@ -314,14 +312,16 @@ async function loadRekap() {
 
   showLoading('Memuat rekap...');
   try {
-    const range = `${CONFIG.SHEET_ABSENSI}!A2:F10000`;
+    // Sheet sekarang 5 kolom: Tanggal | Sesi | Kelas | Nama | Timestamp
+    const range = `${CONFIG.SHEET_ABSENSI}!A2:E10000`;
     const url   = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${CONFIG.API_KEY}`;
     const res   = await fetch(url);
     const data  = await res.json();
     if (data.error) throw new Error(data.error.message);
     hideLoading();
 
-    // rows: [tanggal, sesi, kelas, nama, status, timestamp]
+    // rows: [tanggal, sesi, kelas, nama, timestamp]
+    // Semua baris = hadir (tidak ada baris absen lagi)
     let rows = (data.values || []).filter(r => r[0] && r[0].startsWith(bulan));
     if (sesi) rows = rows.filter(r => r[1] === `Sesi ${sesi}`);
     state.rekapData = rows;
@@ -342,45 +342,46 @@ function renderRekap(rows, bulan, sesi) {
     return;
   }
 
+  // Setiap baris = 1 siswa hadir. Kolom: [0]tanggal [1]sesi [2]kelas [3]nama [4]timestamp
   const byKelas = {
-    kecil:{total:0,hadir:0},
-    tengah:{total:0,hadir:0},
-    besar:{total:0,hadir:0}
+    kecil:  { hadir: 0 },
+    tengah: { hadir: 0 },
+    besar:  { hadir: 0 },
   };
   const byDate = {};
 
   rows.forEach(r => {
-    const tgl    = r[0], sesiR = r[1]||'', kelas = (r[2]||'').toLowerCase(), status = r[4];
-    if (byKelas[kelas]) {
-      byKelas[kelas].total++;
-      if (status==='Hadir') byKelas[kelas].hadir++;
-    }
+    const tgl   = r[0];
+    const sesiR = r[1] || '';
+    const kelas = (r[2] || '').toLowerCase();
+
+    if (byKelas[kelas]) byKelas[kelas].hadir++;
+
     const key = `${tgl}||${sesiR}`;
-    if (!byDate[key]) byDate[key] = {tgl,sesi:sesiR,kecil:0,tengah:0,besar:0};
-    if (status==='Hadir' && byDate[key][kelas]!==undefined) byDate[key][kelas]++;
+    if (!byDate[key]) byDate[key] = { tgl, sesi: sesiR, kecil: 0, tengah: 0, besar: 0 };
+    if (byDate[key][kelas] !== undefined) byDate[key][kelas]++;
   });
 
   const totalHadir = byKelas.kecil.hadir + byKelas.tengah.hadir + byKelas.besar.hadir;
-  const totalAll   = byKelas.kecil.total + byKelas.tengah.total + byKelas.besar.total;
 
   const tableRows = Object.values(byDate)
-    .sort((a,b)=>a.tgl.localeCompare(b.tgl)||a.sesi.localeCompare(b.sesi))
-    .map(d=>`
+    .sort((a, b) => a.tgl.localeCompare(b.tgl) || a.sesi.localeCompare(b.sesi))
+    .map(d => `
       <tr>
         <td>${new Date(d.tgl).toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'})}</td>
         <td><span class="sesi-badge">${d.sesi}</span></td>
         <td>${d.kecil}</td><td>${d.tengah}</td><td>${d.besar}</td>
-        <td><strong>${d.kecil+d.tengah+d.besar}</strong></td>
+        <td><strong>${d.kecil + d.tengah + d.besar}</strong></td>
       </tr>`).join('');
 
   content.innerHTML = `
     <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px;font-weight:700;letter-spacing:0.3px">
-      ${namaBulan.toUpperCase()}${sesiLabel} · Total hadir: <span style="color:var(--maroon)">${totalHadir}/${totalAll}</span>
+      ${namaBulan.toUpperCase()}${sesiLabel} · Total hadir: <span style="color:var(--maroon)">${totalHadir} anak</span>
     </p>
     <div class="stat-grid">
-      <div class="stat-card"><div class="num">${byKelas.kecil.hadir}</div><div class="lbl">🐣 Kecil<br><small style="color:var(--text-muted)">${byKelas.kecil.total} total</small></div></div>
-      <div class="stat-card"><div class="num">${byKelas.tengah.hadir}</div><div class="lbl">🌿 Tengah<br><small style="color:var(--text-muted)">${byKelas.tengah.total} total</small></div></div>
-      <div class="stat-card"><div class="num">${byKelas.besar.hadir}</div><div class="lbl">⭐ Besar<br><small style="color:var(--text-muted)">${byKelas.besar.total} total</small></div></div>
+      <div class="stat-card"><div class="num">${byKelas.kecil.hadir}</div><div class="lbl">🐣 Kecil</div></div>
+      <div class="stat-card"><div class="num">${byKelas.tengah.hadir}</div><div class="lbl">🌿 Tengah</div></div>
+      <div class="stat-card"><div class="num">${byKelas.besar.hadir}</div><div class="lbl">⭐ Besar</div></div>
     </div>
     <p class="rekap-section-title">📆 Per Tanggal & Sesi</p>
     <div class="rekap-table-wrap">
@@ -423,7 +424,7 @@ function getExportMeta() {
 function exportCSV() {
   closeExportModal();
   const { filename } = getExportMeta();
-  const csv  = ['Tanggal,Sesi,Kelas,Nama,Status,Timestamp',
+  const csv  = ['Tanggal,Sesi,Kelas,Nama,Timestamp',
     ...state.rekapData.map(r=>r.join(','))].join('\n');
   const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   triggerDownload(URL.createObjectURL(blob), filename+'.csv');
@@ -443,19 +444,21 @@ function exportExcel() {
   const wb = XLSX.utils.book_new();
 
   /* --- Sheet 1: Data mentah --- */
-  const rawHeaders = ['Tanggal','Sesi','Kelas','Nama','Status','Timestamp'];
+  // Kolom sheet: Tanggal | Sesi | Kelas | Nama | Timestamp (semua baris = Hadir)
+  const rawHeaders = ['Tanggal','Sesi','Kelas','Nama','Timestamp'];
   const rawData    = [rawHeaders, ...state.rekapData];
   const wsRaw      = XLSX.utils.aoa_to_sheet(rawData);
-  wsRaw['!cols']   = [14,10,10,24,10,20].map(w=>({wch:w}));
+  wsRaw['!cols']   = [14,10,10,24,20].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, wsRaw, 'Data Absensi');
 
   /* --- Sheet 2: Ringkasan per tanggal --- */
+  // Setiap baris = 1 siswa hadir, tidak ada kolom Status
   const byDate = {};
   state.rekapData.forEach(r => {
-    const tgl=r[0],sesiR=r[1],kelas=(r[2]||'').toLowerCase(),status=r[4];
+    const tgl=r[0],sesiR=r[1],kelas=(r[2]||'').toLowerCase();
     const key=`${tgl}||${sesiR}`;
     if (!byDate[key]) byDate[key]={tgl,sesi:sesiR,kecil:0,tengah:0,besar:0};
-    if (status==='Hadir' && byDate[key][kelas]!==undefined) byDate[key][kelas]++;
+    if (byDate[key][kelas]!==undefined) byDate[key][kelas]++;
   });
   const summaryHeaders = ['Tanggal','Sesi','Kelas Kecil','Kelas Tengah','Kelas Besar','Total'];
   const summaryRows = Object.values(byDate)
@@ -476,18 +479,19 @@ function exportPDF() {
   closeExportModal();
   const { namaBulan, sesiLabel } = getExportMeta();
 
-  const byKelas={kecil:{total:0,hadir:0},tengah:{total:0,hadir:0},besar:{total:0,hadir:0}};
+  const byKelas={kecil:{hadir:0},tengah:{hadir:0},besar:{hadir:0}};
   const byDate={};
+  // Setiap baris = 1 siswa hadir, tidak ada kolom Status
   state.rekapData.forEach(r=>{
-    const tgl=r[0],sesiR=r[1]||'',kelas=(r[2]||'').toLowerCase(),status=r[4];
-    if(byKelas[kelas]){byKelas[kelas].total++;if(status==='Hadir')byKelas[kelas].hadir++;}
+    const tgl=r[0],sesiR=r[1]||'',kelas=(r[2]||'').toLowerCase();
+    if(byKelas[kelas]) byKelas[kelas].hadir++;
     const key=`${tgl}||${sesiR}`;
     if(!byDate[key])byDate[key]={tgl,sesi:sesiR,kecil:0,tengah:0,besar:0};
-    if(status==='Hadir'&&byDate[key][kelas]!==undefined)byDate[key][kelas]++;
+    if(byDate[key][kelas]!==undefined)byDate[key][kelas]++;
   });
 
   const totalHadir=byKelas.kecil.hadir+byKelas.tengah.hadir+byKelas.besar.hadir;
-  const totalAll=byKelas.kecil.total+byKelas.tengah.total+byKelas.besar.total;
+  const totalAll=totalHadir;
 
   const tableRows=Object.values(byDate)
     .sort((a,b)=>a.tgl.localeCompare(b.tgl)||a.sesi.localeCompare(b.sesi))
@@ -531,10 +535,10 @@ function exportPDF() {
   </div>
 </div>
 <div class="stat-row">
-  <div class="stat-box"><div class="stat-num">${byKelas.kecil.hadir}<span style="font-size:16px;color:#bbb">/${byKelas.kecil.total}</span></div><div class="stat-lbl">🐣 Kelas Kecil</div></div>
-  <div class="stat-box"><div class="stat-num">${byKelas.tengah.hadir}<span style="font-size:16px;color:#bbb">/${byKelas.tengah.total}</span></div><div class="stat-lbl">🌿 Kelas Tengah</div></div>
-  <div class="stat-box"><div class="stat-num">${byKelas.besar.hadir}<span style="font-size:16px;color:#bbb">/${byKelas.besar.total}</span></div><div class="stat-lbl">⭐ Kelas Besar</div></div>
-  <div class="stat-box"><div class="stat-num">${totalHadir}<span style="font-size:16px;color:#bbb">/${totalAll}</span></div><div class="stat-lbl">📊 Total Hadir</div></div>
+  <div class="stat-box"><div class="stat-num">${byKelas.kecil.hadir}</div><div class="stat-lbl">🐣 Kelas Kecil</div></div>
+  <div class="stat-box"><div class="stat-num">${byKelas.tengah.hadir}</div><div class="stat-lbl">🌿 Kelas Tengah</div></div>
+  <div class="stat-box"><div class="stat-num">${byKelas.besar.hadir}</div><div class="stat-lbl">⭐ Kelas Besar</div></div>
+  <div class="stat-box"><div class="stat-num">${totalHadir}</div><div class="stat-lbl">📊 Total Hadir</div></div>
 </div>
 <h3>Detail Per Tanggal & Sesi</h3>
 <table>
