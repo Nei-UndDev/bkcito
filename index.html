@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#4A0A13" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Absensi Beloved Kids Cito</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="bg-bubbles" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite">
+    <div class="loading-spinner"></div>
+    <p id="loadingMsg">Memuat data...</p>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap">
+        <img src="BK Cito.jpeg" alt="Beloved Kids Cito" class="site-logo" />
+      </div>
+      <div class="header-text">
+        <div class="header-date" id="headerDate"></div>
+        <h1 class="header-title">Beloved Kids Cito</h1>
+        <p class="header-tagline">Sistem Absensi Jemaat Anak</p>
+      </div>
+    </div>
+    <div class="header-ring" aria-hidden="true"></div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <div class="config-banner hidden" id="config-banner">
+      <span>⚙️</span>
+      <div>Setup diperlukan! Isi <code>SPREADSHEET_ID</code>, <code>API_KEY</code>, dan <code>APPS_SCRIPT_URL</code> di <code>app.js</code>.</div>
+    </div>
+
+    <!-- TABS -->
+    <nav class="tab-nav" role="tablist" aria-label="Pilih Kelas">
+      <button class="tab-btn" id="tab-kecil"  role="tab" aria-selected="false" onclick="switchTab('kecil')" >
+        <span class="tab-icon" aria-hidden="true">🐣</span>
+        <span class="tab-label">Kecil</span>
+        <span class="tab-sub">3–6 thn</span>
+      </button>
+      <button class="tab-btn" id="tab-tengah" role="tab" aria-selected="false" onclick="switchTab('tengah')">
+        <span class="tab-icon" aria-hidden="true">🌿</span>
+        <span class="tab-label">Tengah</span>
+        <span class="tab-sub">7–9 thn</span>
+      </button>
+      <button class="tab-btn" id="tab-besar"  role="tab" aria-selected="false" onclick="switchTab('besar')" >
+        <span class="tab-icon" aria-hidden="true">⭐</span>
+        <span class="tab-label">Besar</span>
+        <span class="tab-sub">10+ thn</span>
+      </button>
+      <button class="tab-btn" id="tab-rekap"  role="tab" aria-selected="false" onclick="switchTab('rekap')" >
+        <span class="tab-icon" aria-hidden="true">📊</span>
+        <span class="tab-label">Rekap</span>
+        <span class="tab-sub">Laporan</span>
+      </button>
+    </nav>
+
+    <!-- HINT BAR -->
+    <div class="hint-bar" id="hint-bar">
+      👆 Ketuk nama anak untuk tandai <strong>Hadir</strong> · Ketuk lagi untuk batalkan
+    </div>
+
+    <!-- ===== PANEL KECIL ===== -->
+    <section class="panel" id="panel-kecil" role="tabpanel" aria-labelledby="tab-kecil">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge kecil-badge" aria-hidden="true">🐣</div>
+          <div>
+            <h2>Kelas Kecil</h2>
+            <p>Usia 3–6 Tahun</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date-kecil">📅 Tanggal Ibadah</label>
+            <input type="date" id="date-kecil" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label for="sesi-kecil">🕐 Sesi</label>
+            <select id="sesi-kecil" class="form-input">
+              <option value="1">Sesi 1</option>
+              <option value="2">Sesi 2</option>
+              <option value="3">Sesi 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="add-row">
+          <input type="text" id="newName-kecil" class="form-input"
+            placeholder="Nama anak baru..."
+            autocomplete="off" autocorrect="off" autocapitalize="words"
+            onkeydown="if(event.key==='Enter') addStudent('kecil')" />
+          <button class="btn btn-add" onclick="addStudent('kecil')" aria-label="Tambah siswa">
+            ➕ Tambah
+          </button>
+        </div>
+
+        <!-- Attendance counter badge -->
+        <div class="attendance-hint" id="hint-kecil"></div>
+        <div class="progress-wrap" id="progress-wrap-kecil" style="display:none">
+          <div class="progress-label">
+            <span>Kehadiran</span>
+            <strong id="progress-text-kecil">0 / 0</strong>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill-kecil" style="width:0%"></div>
+          </div>
+        </div>
+
+        <div class="student-list" id="list-kecil" aria-label="Daftar siswa kelas kecil"></div>
+        <div class="summary-bar" id="summary-kecil"></div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="submitAbsensi('kecil')">
+            💾 Simpan Absensi
+          </button>
+        </div>
+        <div class="action-row" style="margin-top:8px">
+          <button class="btn btn-ghost" onclick="selectAll('kecil')">✅ Semua Hadir</button>
+          <button class="btn btn-ghost" onclick="clearAll('kecil')">✖ Reset Semua</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PANEL TENGAH ===== -->
+    <section class="panel" id="panel-tengah" role="tabpanel" aria-labelledby="tab-tengah">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge tengah-badge" aria-hidden="true">🌿</div>
+          <div>
+            <h2>Kelas Tengah</h2>
+            <p>Usia 7–9 Tahun</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date-tengah">📅 Tanggal Ibadah</label>
+            <input type="date" id="date-tengah" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label for="sesi-tengah">🕐 Sesi</label>
+            <select id="sesi-tengah" class="form-input">
+              <option value="1">Sesi 1</option>
+              <option value="2">Sesi 2</option>
+              <option value="3">Sesi 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="add-row">
+          <input type="text" id="newName-tengah" class="form-input"
+            placeholder="Nama anak baru..."
+            autocomplete="off" autocorrect="off" autocapitalize="words"
+            onkeydown="if(event.key==='Enter') addStudent('tengah')" />
+          <button class="btn btn-add" onclick="addStudent('tengah')" aria-label="Tambah siswa">
+            ➕ Tambah
+          </button>
+        </div>
+
+        <div class="attendance-hint" id="hint-tengah"></div>
+        <div class="progress-wrap" id="progress-wrap-tengah" style="display:none">
+          <div class="progress-label">
+            <span>Kehadiran</span>
+            <strong id="progress-text-tengah">0 / 0</strong>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill-tengah" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="student-list" id="list-tengah" aria-label="Daftar siswa kelas tengah"></div>
+        <div class="summary-bar" id="summary-tengah"></div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="submitAbsensi('tengah')">💾 Simpan Absensi</button>
+        </div>
+        <div class="action-row" style="margin-top:8px">
+          <button class="btn btn-ghost" onclick="selectAll('tengah')">✅ Semua Hadir</button>
+          <button class="btn btn-ghost" onclick="clearAll('tengah')">✖ Reset Semua</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PANEL BESAR ===== -->
+    <section class="panel" id="panel-besar" role="tabpanel" aria-labelledby="tab-besar">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge besar-badge" aria-hidden="true">⭐</div>
+          <div>
+            <h2>Kelas Besar</h2>
+            <p>Usia 10+ Tahun</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date-besar">📅 Tanggal Ibadah</label>
+            <input type="date" id="date-besar" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label for="sesi-besar">🕐 Sesi</label>
+            <select id="sesi-besar" class="form-input">
+              <option value="1">Sesi 1</option>
+              <option value="2">Sesi 2</option>
+              <option value="3">Sesi 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="add-row">
+          <input type="text" id="newName-besar" class="form-input"
+            placeholder="Nama anak baru..."
+            autocomplete="off" autocorrect="off" autocapitalize="words"
+            onkeydown="if(event.key==='Enter') addStudent('besar')" />
+          <button class="btn btn-add" onclick="addStudent('besar')" aria-label="Tambah siswa">
+            ➕ Tambah
+          </button>
+        </div>
+
+        <div class="attendance-hint" id="hint-besar"></div>
+        <div class="progress-wrap" id="progress-wrap-besar" style="display:none">
+          <div class="progress-label">
+            <span>Kehadiran</span>
+            <strong id="progress-text-besar">0 / 0</strong>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill-besar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="student-list" id="list-besar" aria-label="Daftar siswa kelas besar"></div>
+        <div class="summary-bar" id="summary-besar"></div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="submitAbsensi('besar')">💾 Simpan Absensi</button>
+        </div>
+        <div class="action-row" style="margin-top:8px">
+          <button class="btn btn-ghost" onclick="selectAll('besar')">✅ Semua Hadir</button>
+          <button class="btn btn-ghost" onclick="clearAll('besar')">✖ Reset Semua</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PANEL REKAP ===== -->
+    <section class="panel" id="panel-rekap" role="tabpanel" aria-labelledby="tab-rekap">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge rekap-badge" aria-hidden="true">📊</div>
+          <div>
+            <h2>Rekap Kehadiran</h2>
+            <p>Laporan Bulanan</p>
+          </div>
+        </div>
+
+        <div class="rekap-controls">
+          <select id="rekap-bulan" class="form-input" aria-label="Pilih bulan">
+            <option value="">— Pilih Bulan —</option>
+          </select>
+          <select id="rekap-sesi" class="form-input" aria-label="Filter sesi">
+            <option value="">Semua Sesi</option>
+            <option value="1">Sesi 1</option>
+            <option value="2">Sesi 2</option>
+            <option value="3">Sesi 3</option>
+          </select>
+          <button class="btn btn-primary" onclick="loadRekap()">🔍 Tampilkan</button>
+          <button class="btn btn-outline" onclick="openExportModal()">⬇ Export</button>
+        </div>
+
+        <div id="rekap-content">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>Pilih bulan dan klik <strong>Tampilkan</strong></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Beloved Kids Cito &hearts; Melayani dengan Kasih</p>
+  </footer>
+
+  <!-- EXPORT MODAL -->
+  <div class="modal-overlay" id="exportModal" onclick="closeExportModal(event)">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Pilih Format Export">
+      <div class="modal-header">
+        <div class="modal-icon">⬇</div>
+        <div>
+          <h3 class="modal-title">Export Rekap</h3>
+          <p class="modal-sub">Pilih format file yang kamu mau</p>
+        </div>
+        <button class="modal-close" onclick="closeExportModal()" aria-label="Tutup">✕</button>
+      </div>
+
+      <div class="export-options">
+        <button class="export-opt" onclick="exportCSV()">
+          <div class="export-opt-icon csv-icon">CSV</div>
+          <div class="export-opt-body">
+            <strong>CSV</strong>
+            <span>Comma Separated · cocok buat import ke Google Sheets / Excel manual</span>
+          </div>
+          <div class="export-opt-arrow">›</div>
+        </button>
+
+        <button class="export-opt" onclick="exportExcel()">
+          <div class="export-opt-icon xlsx-icon">XLS</div>
+          <div class="export-opt-body">
+            <strong>Excel (.xlsx)</strong>
+            <span>Langsung buka di Microsoft Excel atau Google Sheets</span>
+          </div>
+          <div class="export-opt-arrow">›</div>
+        </button>
+
+        <button class="export-opt" onclick="exportPDF()">
+          <div class="export-opt-icon pdf-icon">PDF</div>
+          <div class="export-opt-body">
+            <strong>PDF</strong>
+            <span>Siap cetak · rapi untuk laporan atau arsip</span>
+          </div>
+          <div class="export-opt-arrow">›</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden PDF print area -->
+  <div id="pdf-print-area" style="display:none"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
