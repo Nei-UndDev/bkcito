@@ -74,7 +74,7 @@ function switchTab(tab) {
    LOAD SISWA
    ============================================================ */
 async function loadSiswa() {
-  showLoading('Memuat daftar siswa...');
+  showLoading('Memuat daftar anak...');
   try {
     const range = `${CONFIG.SHEET_SISWA}!A2:C1000`;
     const url   = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${CONFIG.API_KEY}`;
@@ -142,7 +142,7 @@ function renderStudents(kelas) {
     listEl.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">👼</div>
-        <p>Belum ada siswa.<br>Tambah nama di atas atau<br>isi langsung di sheet <strong>Siswa</strong>.</p>
+        <p>Belum ada anak.<br>Tambah nama di atas atau<br>isi langsung di sheet <strong>Siswa</strong>.</p>
       </div>`;
     updateSummary(kelas);
     return;
@@ -162,7 +162,7 @@ function renderStudents(kelas) {
         <div class="student-status">${isHadir ? '✓ Hadir' : '— Absen'}</div>
         <button class="del-btn"
                 onclick="event.stopPropagation();deleteStudent('${kelas}',${i})"
-                aria-label="Hapus ${stu.nama}">🗑</button>
+                aria-label="Hapus ${stu.nama}">✕</button>
       </div>`;
   }).join('');
 
@@ -183,7 +183,7 @@ function toggleAttendance(kelas, id) {
 function selectAll(kelas) {
   state[kelas].students.forEach(s => { state[kelas].attendance[s.id] = true; });
   renderStudents(kelas);
-  showToast(`✅ Semua siswa ditandai hadir!`, 'success');
+  showToast(`✅ Semua anak ditandai hadir!`, 'success');
 }
 
 function clearAll(kelas) {
@@ -227,7 +227,7 @@ async function addStudent(kelas) {
 
 async function deleteStudent(kelas, idx) {
   const stu = state[kelas].students[idx];
-  if (!confirm(`Hapus "${stu.nama}" dari daftar siswa?`)) return;
+  if (!confirm(`Hapus "${stu.nama}" dari daftar anak?`)) return;
 
   state[kelas].students.splice(idx, 1);
   delete state[kelas].attendance[stu.id];
@@ -269,14 +269,14 @@ async function submitAbsensi(kelas) {
   const sesi    = document.getElementById(`sesi-${kelas}`).value;
 
   if (!tanggal)   { showToast('⚠️ Pilih tanggal dulu!', 'error'); return; }
-  if (!s.students.length) { showToast('⚠️ Belum ada siswa!', 'error'); return; }
+  if (!s.students.length) { showToast('⚠️ Belum ada anak!', 'error'); return; }
 
   const hadir = Object.values(s.attendance).filter(Boolean).length;
   const total = s.students.length;
 
   // Konfirmasi kalau 0 yang hadir
   if (hadir === 0) {
-    if (!confirm(`Semua ${total} siswa ditandai Absen. Yakin simpan?`)) return;
+    if (!confirm(`Semua ${total} anak ditandai Absen. Yakin simpan?`)) return;
   }
 
   const rows = s.students.map(stu => ({
