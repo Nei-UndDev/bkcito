@@ -485,19 +485,33 @@ select.form-input {
   transition:all 0.2s;white-space:nowrap;flex-shrink:0;
 }
 
-/* Delete button */
+/* Delete button — always visible, clearly a destructive action */
 .del-btn {
-  background:none;border:none;cursor:pointer;
-  font-size:1rem;
-  width:40px;height:40px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:50%;
-  opacity:0.22;transition:all 0.18s;flex-shrink:0;
-  touch-action:manipulation;
+  background: rgba(220,53,69,0.08);
+  border: 1.5px solid rgba(220,53,69,0.20);
+  cursor: pointer;
+  font-size: 0.85rem;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  color: #C0392B;
+  transition: all 0.18s;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  user-select: none;
 }
-.del-btn:active{background:rgba(231,76,60,0.15);opacity:1;transform:scale(0.9)}
-@media (hover:none){.del-btn{opacity:0.38}}
-@media (hover:hover){.del-btn:hover{opacity:0.75;background:rgba(231,76,60,0.10)}}
+.del-btn:active {
+  background: rgba(220,53,69,0.22);
+  border-color: rgba(220,53,69,0.50);
+  transform: scale(0.88);
+}
+@media (hover:hover) {
+  .del-btn:hover {
+    background: rgba(220,53,69,0.15);
+    border-color: rgba(220,53,69,0.40);
+    transform: scale(1.05);
+  }
+}
 
 /* Hadir pop animation */
 @keyframes pop {
