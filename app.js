@@ -2,13 +2,9 @@
    BELOVED KIDS CITO — App Logic
    ============================================================ */
 
-const CONFIG = {
-  SPREADSHEET_ID:  '1tefD06Vf_bBY01BAcWHHas05jUJPmpTStjyh5RGngJY',
-  API_KEY:         'AIzaSyBZhVefbJgkvZerFaiBhTvQM2aPtyMAbFQ',
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw4AIeYtaSwb4q-2zWoELwer5R81k7qDkfFjSg8Uzt1iQ9r7Xs6jGS5RGEJhreTAWizOg/exec',
-  SHEET_ABSENSI:   'Absensi',
-  SHEET_SISWA:     'Siswa',
-};
+// Satu-satunya config yang perlu ada di frontend.
+// SPREADSHEET_ID dan API_KEY sudah dipindah ke Apps Script (server-side).
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4AIeYtaSwb4q-2zWoELwer5R81k7qDkfFjSg8Uzt1iQ9r7Xs6jGS5RGEJhreTAWizOg/exec';
 
 const state = {
   kecil:     { students: [], attendance: {} },
@@ -76,19 +72,17 @@ function switchTab(tab) {
 async function loadSiswa() {
   showLoading('Memuat daftar anak...');
   try {
-    const range = `${CONFIG.SHEET_SISWA}!A2:C1000`;
-    const url   = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${CONFIG.API_KEY}`;
-    const res   = await fetch(url);
-    const data  = await res.json();
+    const res  = await fetch(`${APPS_SCRIPT_URL}?action=getSiswa`);
+    const data = await res.json();
 
-    if (data.error) throw new Error(`${data.error.code}: ${data.error.message}`);
+    if (!data.ok) throw new Error(data.error || 'Gagal memuat data');
 
     ['kecil','tengah','besar'].forEach(k => { state[k].students = []; });
 
-    (data.values || []).forEach((row, i) => {
+    (data.result || []).forEach(row => {
       const nama  = (row[0]||'').trim();
       const kelas = (row[1]||'').trim().toLowerCase();
-      const id    = (row[2]||'').trim() || `${kelas}_${i}`;
+      const id    = (row[2]||'').trim();
       if (nama && ['kecil','tengah','besar'].includes(kelas)) {
         state[kelas].students.push({ id, nama });
       }
@@ -96,7 +90,6 @@ async function loadSiswa() {
 
     ['kecil','tengah','besar'].forEach(renderStudents);
 
-    // Show hint bar setelah siswa ada
     const hasStudents = ['kecil','tengah','besar'].some(k => state[k].students.length > 0);
     if (hasStudents) document.getElementById('hint-bar').classList.add('visible');
 
@@ -223,7 +216,7 @@ async function addStudent(kelas) {
 
   try {
     const payload = encodeURIComponent(JSON.stringify({ nama, kelas, id }));
-    await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=tambahSiswa&data=${payload}`, { mode:'no-cors' });
+    await fetch(`${APPS_SCRIPT_URL}?action=tambahSiswa&data=${payload}`, { mode:'no-cors' });
     showToast(`✅ ${nama} ditambahkan!`, 'success');
   } catch(err) {
     showToast('⚠️ Gagal simpan ke Sheets', 'error');
@@ -240,7 +233,7 @@ async function deleteStudent(kelas, idx) {
 
   try {
     const payload = encodeURIComponent(JSON.stringify({ nama: stu.nama, kelas, id: stu.id }));
-    await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=hapusSiswa&data=${payload}`, { mode:'no-cors' });
+    await fetch(`${APPS_SCRIPT_URL}?action=hapusSiswa&data=${payload}`, { mode:'no-cors' });
     showToast(`🗑 ${stu.nama} dihapus`, '');
   } catch(err) {
     showToast('⚠️ Gagal hapus dari Sheets', 'error');
@@ -321,7 +314,7 @@ async function saveEditModal() {
     const payload = encodeURIComponent(JSON.stringify({
       id, namaLama, namaBaru, kelasLama, kelasBaru
     }));
-    await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=editSiswa&data=${payload}`, { mode: 'no-cors' });
+    await fetch(`${APPS_SCRIPT_URL}?action=editSiswa&data=${payload}`, { mode: 'no-cors' });
   } catch(err) {
     showToast('⚠️ Gagal sinkron ke Sheets', 'error');
   }
@@ -371,7 +364,7 @@ async function submitAbsensi(kelas) {
   showLoading(`Menyimpan absensi Kelas ${capitalize(kelas)} Sesi ${sesi}...`);
   try {
     const encoded = encodeURIComponent(JSON.stringify(rows));
-    await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=absensi&data=${encoded}`, { mode:'no-cors' });
+    await fetch(`${APPS_SCRIPT_URL}?action=absensi&data=${encoded}`, { mode:'no-cors' });
     hideLoading();
     showToast(`✅ Tersimpan! ${hadir}/${total} hadir — Sesi ${sesi}`, 'success');
     clearAll_silent(kelas);
@@ -397,20 +390,16 @@ async function loadRekap() {
 
   showLoading('Memuat rekap...');
   try {
-    // Sheet sekarang 5 kolom: Tanggal | Sesi | Kelas | Nama | Timestamp
-    const range = `${CONFIG.SHEET_ABSENSI}!A2:E10000`;
-    const url   = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${CONFIG.API_KEY}`;
-    const res   = await fetch(url);
-    const data  = await res.json();
-    if (data.error) throw new Error(data.error.message);
+    const params = new URLSearchParams({ action: 'getRekap', bulan });
+    if (sesi) params.set('sesi', `Sesi ${sesi}`);
+    const res  = await fetch(`${APPS_SCRIPT_URL}?${params}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Gagal memuat rekap');
     hideLoading();
 
     // rows: [tanggal, sesi, kelas, nama, timestamp]
-    // Semua baris = hadir (tidak ada baris absen lagi)
-    let rows = (data.values || []).filter(r => r[0] && r[0].startsWith(bulan));
-    if (sesi) rows = rows.filter(r => r[1] === `Sesi ${sesi}`);
-    state.rekapData = rows;
-    renderRekap(rows, bulan, sesi);
+    state.rekapData = data.result || [];
+    renderRekap(state.rekapData, bulan, sesi);
   } catch(err) {
     hideLoading();
     showToast('❌ Gagal memuat: ' + err.message, 'error');
