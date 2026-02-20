@@ -851,3 +851,78 @@ select.form-input {
   .modal-box{border-radius:24px;max-width:440px;width:92%;}
   .modal-box::before{display:none}
 }
+
+/* ============================================================
+   STUDENT ACTIONS (edit + hapus)
+   ============================================================ */
+.student-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Edit button */
+.edit-btn {
+  background: rgba(21, 101, 192, 0.08);
+  border: 1.5px solid rgba(21, 101, 192, 0.22);
+  cursor: pointer;
+  font-size: 0.95rem;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  color: #1565C0;
+  transition: all 0.18s;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  user-select: none;
+}
+.edit-btn:active {
+  background: rgba(21, 101, 192, 0.20);
+  border-color: rgba(21, 101, 192, 0.45);
+  transform: scale(0.88);
+}
+@media (hover:hover) {
+  .edit-btn:hover {
+    background: rgba(21, 101, 192, 0.14);
+    border-color: rgba(21, 101, 192, 0.38);
+    transform: scale(1.05);
+  }
+}
+
+/* ============================================================
+   EDIT MODAL SPECIFICS
+   ============================================================ */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.edit-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: linear-gradient(135deg, #FFF8E1, #FFF3CD);
+  border: 1.5px solid rgba(212, 160, 23, 0.35);
+  border-radius: var(--radius-xs);
+  padding: 12px 14px;
+  font-size: 0.8rem;
+  color: #5D4037;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.edit-info-box span:first-child { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+.edit-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+.edit-actions .btn-ghost {
+  flex: 0;
+  padding: 12px 20px;
+  min-height: 48px;
+  white-space: nowrap;
+}

@@ -7,7 +7,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Absensi Beloved Kids Cito</title>
-  <link rel="icon" type="image/x-icon" href="BK Cito.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
@@ -112,7 +111,7 @@
             placeholder="Nama anak baru..."
             autocomplete="off" autocorrect="off" autocapitalize="words"
             onkeydown="if(event.key==='Enter') addStudent('kecil')" />
-          <button class="btn btn-add" onclick="addStudent('kecil')" aria-label="Tambah siswa">
+          <button class="btn btn-add" onclick="addStudent('kecil')" aria-label="Tambah anak baru">
             ➕ Tambah
           </button>
         </div>
@@ -129,7 +128,7 @@
           </div>
         </div>
 
-        <div class="student-list" id="list-kecil" aria-label="Daftar siswa kelas kecil"></div>
+        <div class="student-list" id="list-kecil" aria-label="Daftar anak kelas kecil"></div>
         <div class="summary-bar" id="summary-kecil"></div>
 
         <div class="action-row">
@@ -175,7 +174,7 @@
             placeholder="Nama anak baru..."
             autocomplete="off" autocorrect="off" autocapitalize="words"
             onkeydown="if(event.key==='Enter') addStudent('tengah')" />
-          <button class="btn btn-add" onclick="addStudent('tengah')" aria-label="Tambah siswa">
+          <button class="btn btn-add" onclick="addStudent('tengah')" aria-label="Tambah anak baru">
             ➕ Tambah
           </button>
         </div>
@@ -190,7 +189,7 @@
             <div class="progress-bar-fill" id="progress-fill-tengah" style="width:0%"></div>
           </div>
         </div>
-        <div class="student-list" id="list-tengah" aria-label="Daftar siswa kelas tengah"></div>
+        <div class="student-list" id="list-tengah" aria-label="Daftar anak kelas tengah"></div>
         <div class="summary-bar" id="summary-tengah"></div>
 
         <div class="action-row">
@@ -234,7 +233,7 @@
             placeholder="Nama anak baru..."
             autocomplete="off" autocorrect="off" autocapitalize="words"
             onkeydown="if(event.key==='Enter') addStudent('besar')" />
-          <button class="btn btn-add" onclick="addStudent('besar')" aria-label="Tambah siswa">
+          <button class="btn btn-add" onclick="addStudent('besar')" aria-label="Tambah anak baru">
             ➕ Tambah
           </button>
         </div>
@@ -249,7 +248,7 @@
             <div class="progress-bar-fill" id="progress-fill-besar" style="width:0%"></div>
           </div>
         </div>
-        <div class="student-list" id="list-besar" aria-label="Daftar siswa kelas besar"></div>
+        <div class="student-list" id="list-besar" aria-label="Daftar anak kelas besar"></div>
         <div class="summary-bar" id="summary-besar"></div>
 
         <div class="action-row">
@@ -301,6 +300,54 @@
   <footer class="site-footer">
     <p>Beloved Kids Cito &hearts; Melayani dengan Kasih</p>
   </footer>
+
+  <!-- EDIT SISWA MODAL -->
+  <div class="modal-overlay" id="editModal" onclick="closeEditModal(event)">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Edit Data Anak">
+      <div class="modal-header">
+        <div class="modal-icon" style="font-size:1.3rem">&#9998;</div>
+        <div>
+          <h3 class="modal-title">Edit Siswa</h3>
+          <p class="modal-sub" id="editModal-title"></p>
+        </div>
+        <button class="modal-close" onclick="closeEditModal()" aria-label="Tutup">&#x2715;</button>
+      </div>
+
+      <input type="hidden" id="editModal-origKelas" />
+      <input type="hidden" id="editModal-idx" />
+      <input type="hidden" id="editModal-id" />
+
+      <div class="edit-form">
+        <div class="form-group">
+          <label for="editModal-nama">Nama Anak</label>
+          <input type="text" id="editModal-nama" class="form-input"
+                 autocomplete="off" autocapitalize="words"
+                 onkeydown="if(event.key==='Enter') saveEditModal()" />
+        </div>
+
+        <div class="form-group">
+          <label for="editModal-kelas">Kelas</label>
+          <select id="editModal-kelas" class="form-input" onchange="toggleEditInfoBox()">
+            <option value="kecil">&#x1F423; Kelas Kecil (3&ndash;6 thn)</option>
+            <option value="tengah">&#x1F33F; Kelas Tengah (7&ndash;9 thn)</option>
+            <option value="besar">&#x2B50; Kelas Besar (10+ thn)</option>
+          </select>
+        </div>
+
+        <div class="edit-info-box" id="editModal-infobox" style="display:none">
+          <span>&#x1F4E6;</span>
+          <span>Riwayat absensi lama tetap tersimpan di kelas sebelumnya.</span>
+        </div>
+      </div>
+
+      <div class="edit-actions">
+        <button class="btn btn-ghost" onclick="closeEditModal()">Batal</button>
+        <button class="btn btn-primary" onclick="saveEditModal()" style="min-height:48px;width:auto;padding:12px 28px">
+          &#x1F4BE; Simpan
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- EXPORT MODAL -->
   <div class="modal-overlay" id="exportModal" onclick="closeExportModal(event)">

@@ -160,9 +160,14 @@ function renderStudents(kelas) {
         <div class="student-avatar" aria-hidden="true">${isHadir ? '✓' : initial}</div>
         <div class="student-name">${escapeHtml(stu.nama)}</div>
         <div class="student-status">${isHadir ? '✓ Hadir' : '— Absen'}</div>
-        <button class="del-btn"
-                onclick="event.stopPropagation();deleteStudent('${kelas}',${i})"
-                aria-label="Hapus ${stu.nama}">✕</button>
+        <div class="student-actions">
+          <button class="edit-btn"
+                  onclick="event.stopPropagation();openEditModal('${kelas}',${i})"
+                  aria-label="Edit ${stu.nama}" title="Edit / Pindah Kelas">✎</button>
+          <button class="del-btn"
+                  onclick="event.stopPropagation();deleteStudent('${kelas}',${i})"
+                  aria-label="Hapus ${stu.nama}" title="Hapus">✕</button>
+        </div>
       </div>`;
   }).join('');
 
@@ -239,6 +244,86 @@ async function deleteStudent(kelas, idx) {
     showToast(`🗑 ${stu.nama} dihapus`, '');
   } catch(err) {
     showToast('⚠️ Gagal hapus dari Sheets', 'error');
+  }
+}
+
+/* ============================================================
+   EDIT SISWA (Nama & Pindah Kelas)
+   ============================================================ */
+function openEditModal(kelas, idx) {
+  const stu = state[kelas].students[idx];
+  document.getElementById('editModal-nama').value    = stu.nama;
+  document.getElementById('editModal-kelas').value   = kelas;
+  document.getElementById('editModal-origKelas').value = kelas;
+  document.getElementById('editModal-idx').value     = idx;
+  document.getElementById('editModal-id').value      = stu.id;
+  document.getElementById('editModal-title').textContent = stu.nama;
+  document.getElementById('editModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('editModal-nama').focus(), 120);
+}
+
+function toggleEditInfoBox() {
+  const kelas = document.getElementById('editModal-kelas').value;
+  const orig  = document.getElementById('editModal-origKelas').value;
+  document.getElementById('editModal-infobox').style.display = (kelas !== orig) ? 'flex' : 'none';
+}
+
+function closeEditModal(e) {
+  if (e && e.target !== document.getElementById('editModal')) return;
+  document.getElementById('editModal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+async function saveEditModal() {
+  const namaBaru    = document.getElementById('editModal-nama').value.trim();
+  const kelasBaru   = document.getElementById('editModal-kelas').value;
+  const kelasLama   = document.getElementById('editModal-origKelas').value;
+  const idx         = parseInt(document.getElementById('editModal-idx').value);
+  const id          = document.getElementById('editModal-id').value;
+
+  if (!namaBaru) {
+    document.getElementById('editModal-nama').focus();
+    document.getElementById('editModal-nama').style.borderColor = 'var(--maroon-light)';
+    setTimeout(() => document.getElementById('editModal-nama').style.borderColor = '', 1500);
+    return;
+  }
+
+  const stu      = state[kelasLama].students[idx];
+  const namaLama = stu.nama;
+  const pindah   = kelasBaru !== kelasLama;
+
+  // Update state
+  stu.nama = namaBaru;
+
+  if (pindah) {
+    // Hapus dari kelas lama
+    state[kelasLama].students.splice(idx, 1);
+    delete state[kelasLama].attendance[id];
+    // Tambah ke kelas baru (pertahankan ID yang sama)
+    state[kelasBaru].students.push({ id, nama: namaBaru });
+    renderStudents(kelasLama);
+    renderStudents(kelasBaru);
+  } else {
+    renderStudents(kelasLama);
+  }
+
+  document.getElementById('editModal').classList.remove('show');
+  document.body.style.overflow = '';
+
+  const label = pindah
+    ? `✅ ${namaBaru} dipindah ke Kelas ${capitalize(kelasBaru)}!`
+    : `✅ Nama diperbarui!`;
+  showToast(label, 'success');
+
+  // Simpan perubahan ke Apps Script
+  try {
+    const payload = encodeURIComponent(JSON.stringify({
+      id, namaLama, namaBaru, kelasLama, kelasBaru
+    }));
+    await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=editSiswa&data=${payload}`, { mode: 'no-cors' });
+  } catch(err) {
+    showToast('⚠️ Gagal sinkron ke Sheets', 'error');
   }
 }
 
