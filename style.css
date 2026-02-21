@@ -9,17 +9,17 @@
   --maroon:       #7B1120;
   --maroon-deep:  #4A0A13;
   --maroon-light: #C0394A;
-  --maroon-pale:  #FCF0F2;
+  --maroon-pale:  #FAE8EB;
   --gold:         #D4A017;
   --gold-light:   #F0C842;
   --gold-pale:    #FDF3D0;
-  --cream:        #FFF8F0;
-  --white:        #FFFFFF;
+  --cream:        #F5EDE6;   /* lebih warm & muted, gak seputih dulu */
+  --white:        #FBF6F3;   /* off-white hangat, bukan pure white */
 
   --text:         #2C1810;
   --text-mid:     #6B3A2A;
   --text-muted:   #A07060;
-  --border:       rgba(123,17,32,0.12);
+  --border:       rgba(123,17,32,0.10);
 
   --radius:       20px;
   --radius-sm:    14px;
@@ -116,7 +116,7 @@ body {
    ============================================================ */
 .site-header {
   position:relative;z-index:1;
-  background:linear-gradient(145deg,var(--maroon-deep) 0%,#8B1525 50%,#9B2030 100%);
+  background:linear-gradient(145deg,#5C1018 0%,#7B1120 55%,#8B1A28 100%);
   padding:28px 20px 96px;
   overflow:hidden;
 }
@@ -222,7 +222,7 @@ body {
   padding:10px 6px;
   border:2px solid rgba(123,17,32,0.10);
   border-radius:var(--radius-sm);
-  background:var(--white);
+  background:#F0E8E2;
   color:var(--text-muted);
   font-family:var(--font-body);
   cursor:pointer;
@@ -268,8 +268,8 @@ body {
   background:var(--white);
   border-radius:var(--radius);
   padding:22px 18px;
-  box-shadow:var(--shadow);
-  border:1px solid rgba(123,17,32,0.07);
+  box-shadow:0 2px 20px rgba(74,10,19,0.06);
+  border:1px solid rgba(123,17,32,0.08);
 }
 
 /* ---- PANEL HEADER ---- */
@@ -312,7 +312,7 @@ body {
 .form-input {
   width:100%;
   min-height:50px;
-  background:#FDF6F0;
+  background:#F0E8E2;
   border:2px solid rgba(123,17,32,0.12);
   border-radius:var(--radius-sm);
   padding:12px 14px;
@@ -425,7 +425,16 @@ select.form-input {
 .btn-ghost:hover{background:#F0E4DC;border-color:rgba(123,17,32,0.2)}
 
 .action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.action-row + .action-row{margin-top:10px}
 .action-row .btn-ghost{min-height:48px}
+
+/* Divider antara simpan dan action sekunder */
+.action-divider {
+  height: 1px;
+  background: rgba(123,17,32,0.08);
+  margin: 18px 0 14px;
+  border: none;
+}
 
 /* ============================================================
    STUDENT LIST
@@ -438,7 +447,7 @@ select.form-input {
   padding:12px 16px;
   border-radius:var(--radius-sm);
   border:2px solid rgba(123,17,32,0.09);
-  background:#FDFAF8;
+  background:#F8F1ED;
   cursor:pointer;
   transition:all 0.2s cubic-bezier(0.34,1.2,0.64,1);
   user-select:none;-webkit-user-select:none;
@@ -449,9 +458,9 @@ select.form-input {
 
 /* HADIR state */
 .student-item.hadir{
-  border-color:var(--maroon);
-  background:linear-gradient(135deg,#FFF4F5,#FFE8EC);
-  box-shadow:0 3px 14px rgba(123,17,32,0.14);
+  border-color:rgba(123,17,32,0.55);
+  background:linear-gradient(135deg,#F5E6E9,#EDD5DA);
+  box-shadow:0 2px 10px rgba(123,17,32,0.10);
 }
 .student-item.hadir .student-avatar{
   background:linear-gradient(145deg,var(--maroon-deep),var(--maroon));
@@ -530,7 +539,7 @@ select.form-input {
 .summary-chip{
   padding:7px 16px;border-radius:100px;
   border:1.5px solid rgba(123,17,32,0.10);
-  background:#FDF6F0;
+  background:#EEE3DC;
   font-size:0.8rem;color:var(--text-mid);font-weight:700;
 }
 .summary-chip strong{color:var(--maroon);font-size:0.9rem}
@@ -804,7 +813,7 @@ select.form-input {
   padding:16px 16px;
   border:2px solid rgba(123,17,32,0.10);
   border-radius:var(--radius-sm);
-  background:#FDFAF8;
+  background:#F8F1ED;
   cursor:pointer;
   transition:all 0.2s cubic-bezier(0.34,1.2,0.64,1);
   font-family:var(--font-body);
@@ -861,30 +870,30 @@ select.form-input {
   flex-shrink: 0;
 }
 
-/* Edit button */
+/* Edit button — selaras dengan tema maroon */
 .edit-btn {
-  background: rgba(21, 101, 192, 0.08);
-  border: 1.5px solid rgba(21, 101, 192, 0.22);
+  background: rgba(123, 17, 32, 0.07);
+  border: 1.5px solid rgba(123, 17, 32, 0.18);
   cursor: pointer;
   font-size: 0.95rem;
   width: 36px; height: 36px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 10px;
-  color: #1565C0;
+  color: var(--maroon);
   transition: all 0.18s;
   flex-shrink: 0;
   touch-action: manipulation;
   user-select: none;
 }
 .edit-btn:active {
-  background: rgba(21, 101, 192, 0.20);
-  border-color: rgba(21, 101, 192, 0.45);
+  background: rgba(123, 17, 32, 0.18);
+  border-color: rgba(123, 17, 32, 0.40);
   transform: scale(0.88);
 }
 @media (hover:hover) {
   .edit-btn:hover {
-    background: rgba(21, 101, 192, 0.14);
-    border-color: rgba(21, 101, 192, 0.38);
+    background: rgba(123, 17, 32, 0.12);
+    border-color: rgba(123, 17, 32, 0.32);
     transform: scale(1.05);
   }
 }
