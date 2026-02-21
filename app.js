@@ -436,7 +436,7 @@ async function submitAbsensi(kelas) {
     return;
   }
 
-  // Cek duplikat
+  // Cek duplikat per nama — apakah ada nama yang mau disimpan sudah tercatat di sesi ini?
   showLoading('Mengecek data sebelumnya...');
   try {
     const bulanCek  = tanggal.slice(0, 7);
@@ -447,18 +447,34 @@ async function submitAbsensi(kelas) {
     hideLoading();
 
     if (cekData.ok) {
-      const existing = (cekData.result || []).filter(r => r[0] === tanggal && r[2] === kelas);
-      if (existing.length > 0) {
-        const pillsHTML = existing.map(r =>
-          `<span class="name-pill">${escapeHtml(r[3])}</span>`
+      // Nama yang sudah ada di tanggal + sesi + kelas ini
+      const namaLama = new Set(
+        (cekData.result || [])
+          .filter(r => r[0] === tanggal && r[1] === sesiLabel && r[2] === kelas)
+          .map(r => r[3])
+      );
+
+      // Nama yang mau disimpan sekarang yang sudah ada sebelumnya
+      const namaBentrok = rows.filter(r => namaLama.has(r.nama)).map(r => r.nama);
+
+      if (namaBentrok.length > 0) {
+        const namaBaru = rows.filter(r => !namaLama.has(r.nama)).map(r => r.nama);
+
+        const bentrokPills = namaBentrok.map(n =>
+          `<span class="name-pill" style="border-color:rgba(192,57,43,0.35);background:rgba(192,57,43,0.08);color:#922B21">${escapeHtml(n)}</span>`
         ).join('');
+        const baruPills = namaBaru.length
+          ? namaBaru.map(n => `<span class="name-pill">${escapeHtml(n)}</span>`).join('')
+          : '<span style="font-size:0.8rem;color:var(--text-muted);font-style:italic">—</span>';
+
         showConfirm({
-          title: '⚠️ Data sudah ada',
-          body: `Absensi <strong>Kelas ${capitalize(kelas)} ${sesiLabel}</strong> untuk tanggal ini sudah tercatat.<br><br>
-                 <div style="margin:10px 0 4px;font-size:0.78rem;font-weight:800;color:var(--text-muted)">TERCATAT HADIR SEBELUMNYA</div>
-                 <div style="display:flex;flex-wrap:wrap;gap:6px">${pillsHTML}</div><br>
-                 Lanjutkan akan <strong>mengganti</strong> data lama dengan yang baru.`,
-          confirmLabel: 'Ganti Data Lama',
+          title: '⚠️ Sebagian sudah diabsen',
+          body: `<strong>Kelas ${capitalize(kelas)} ${sesiLabel}</strong> tanggal ini:<br><br>
+                 <div style="margin:0 0 4px;font-size:0.74rem;font-weight:800;color:#922B21;letter-spacing:0.4px">SUDAH ADA — AKAN DITIMPA</div>
+                 <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${bentrokPills}</div>
+                 <div style="margin:0 0 4px;font-size:0.74rem;font-weight:800;color:var(--text-muted);letter-spacing:0.4px">BARU — AKAN DITAMBAHKAN</div>
+                 <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">${baruPills}</div>`,
+          confirmLabel: 'Lanjutkan',
           confirmClass: 'btn-danger',
           onConfirm: doSimpan,
         });
