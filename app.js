@@ -14,6 +14,46 @@ const state = {
 };
 
 /* ============================================================
+   CONFIRM MODAL — reusable, gantiin semua confirm() browser
+   showConfirm({ title, body, confirmLabel, confirmClass, onConfirm })
+   ============================================================ */
+function showConfirm({ title = '', body = '', confirmLabel = 'Ya, Lanjutkan', confirmClass = '', onConfirm }) {
+  const modal       = document.getElementById('confirmModal');
+  const titleEl     = document.getElementById('confirmModal-title');
+  const bodyEl      = document.getElementById('confirmModal-body');
+  const confirmBtn  = document.getElementById('confirmModal-ok');
+  const cancelBtn   = document.getElementById('confirmModal-cancel');
+
+  titleEl.textContent  = title;
+  bodyEl.innerHTML     = body;
+  confirmBtn.textContent = confirmLabel;
+  confirmBtn.className = `btn ${confirmClass || 'btn-primary'} confirm-btn-ok`;
+
+  // Bersihkan listener lama
+  const newOk = confirmBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newOk, confirmBtn);
+  const newCancel = cancelBtn.cloneNode(true);
+  cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+  newOk.textContent = confirmLabel;
+  newOk.className   = `btn ${confirmClass || 'btn-primary'} confirm-btn-ok`;
+
+  newOk.addEventListener('click', () => {
+    closeConfirmModal();
+    onConfirm();
+  });
+  newCancel.addEventListener('click', closeConfirmModal);
+
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmModal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -186,10 +226,17 @@ function selectAll(kelas) {
 
 function clearAll(kelas) {
   if (!Object.values(state[kelas].attendance).some(Boolean)) return;
-  if (!confirm('Reset semua absensi kelas ini?')) return;
-  state[kelas].attendance = {};
-  renderStudents(kelas);
-  showToast('✖ Absensi direset', '');
+  showConfirm({
+    title: 'Reset absensi?',
+    body: `Semua tanda hadir di <strong>Kelas ${capitalize(kelas)}</strong> akan dihapus.<br>Data yang belum disimpan akan hilang.`,
+    confirmLabel: 'Ya, Reset',
+    confirmClass: 'btn-danger',
+    onConfirm: () => {
+      state[kelas].attendance = {};
+      renderStudents(kelas);
+      showToast('✖ Absensi direset', '');
+    },
+  });
 }
 
 /* ============================================================
@@ -223,21 +270,26 @@ async function addStudent(kelas) {
   }
 }
 
-async function deleteStudent(kelas, idx) {
+function deleteStudent(kelas, idx) {
   const stu = state[kelas].students[idx];
-  if (!confirm(`Hapus "${stu.nama}" dari daftar anak?`)) return;
-
-  state[kelas].students.splice(idx, 1);
-  delete state[kelas].attendance[stu.id];
-  renderStudents(kelas);
-
-  try {
-    const payload = encodeURIComponent(JSON.stringify({ nama: stu.nama, kelas, id: stu.id }));
-    await fetch(`${APPS_SCRIPT_URL}?action=hapusSiswa&data=${payload}`, { mode:'no-cors' });
-    showToast(`🗑 ${stu.nama} dihapus`, '');
-  } catch(err) {
-    showToast('⚠️ Gagal hapus dari Sheets', 'error');
-  }
+  showConfirm({
+    title: 'Hapus anak?',
+    body: `<strong>${escapeHtml(stu.nama)}</strong> akan dihapus dari daftar kelas.<br>Riwayat absensi lama tetap tersimpan.`,
+    confirmLabel: 'Hapus',
+    confirmClass: 'btn-danger',
+    onConfirm: async () => {
+      state[kelas].students.splice(idx, 1);
+      delete state[kelas].attendance[stu.id];
+      renderStudents(kelas);
+      try {
+        const payload = encodeURIComponent(JSON.stringify({ nama: stu.nama, kelas, id: stu.id }));
+        await fetch(`${APPS_SCRIPT_URL}?action=hapusSiswa&data=${payload}`, { mode:'no-cors' });
+        showToast(`🗑 ${stu.nama} dihapus`, '');
+      } catch(err) {
+        showToast('⚠️ Gagal hapus dari Sheets', 'error');
+      }
+    },
+  });
 }
 
 /* ============================================================
@@ -357,21 +409,67 @@ async function submitAbsensi(kelas) {
     .filter(stu => s.attendance[stu.id])
     .map(stu => ({ tanggal, sesi: `Sesi ${sesi}`, kelas, nama: stu.nama, status: 'Hadir' }));
 
+  // Helper: jalankan simpan yang sebenarnya
+  const doSimpan = async () => {
+    showLoading(`Menyimpan absensi Kelas ${capitalize(kelas)} Sesi ${sesi}...`);
+    try {
+      const encoded = encodeURIComponent(JSON.stringify(rows));
+      await fetch(`${APPS_SCRIPT_URL}?action=absensi&data=${encoded}`, { mode:'no-cors' });
+      hideLoading();
+      showToast(`✅ Tersimpan! ${hadir}/${total} hadir — Sesi ${sesi}`, 'success');
+      clearAll_silent(kelas);
+    } catch(err) {
+      hideLoading();
+      showToast('❌ Gagal menyimpan, cek koneksi!', 'error');
+    }
+  };
+
+  // Konfirmasi kalau 0 hadir
   if (rows.length === 0) {
-    if (!confirm('Belum ada anak yang ditandai hadir. Tetap simpan?')) return;
+    showConfirm({
+      title: 'Tidak ada yang hadir',
+      body: `Kamu belum menandai anak mana pun sebagai hadir di Kelas <strong>${capitalize(kelas)}</strong>.<br><br>Tetap simpan? Data hadir sebelumnya (jika ada) akan terhapus.`,
+      confirmLabel: 'Ya, Tetap Simpan',
+      confirmClass: 'btn-danger',
+      onConfirm: doSimpan,
+    });
+    return;
   }
 
-  showLoading(`Menyimpan absensi Kelas ${capitalize(kelas)} Sesi ${sesi}...`);
+  // Cek duplikat
+  showLoading('Mengecek data sebelumnya...');
   try {
-    const encoded = encodeURIComponent(JSON.stringify(rows));
-    await fetch(`${APPS_SCRIPT_URL}?action=absensi&data=${encoded}`, { mode:'no-cors' });
+    const bulanCek  = tanggal.slice(0, 7);
+    const sesiLabel = `Sesi ${sesi}`;
+    const cekParams = new URLSearchParams({ action: 'getRekap', bulan: bulanCek, sesi: sesiLabel });
+    const cekRes    = await fetch(`${APPS_SCRIPT_URL}?${cekParams}`);
+    const cekData   = await cekRes.json();
     hideLoading();
-    showToast(`✅ Tersimpan! ${hadir}/${total} hadir — Sesi ${sesi}`, 'success');
-    clearAll_silent(kelas);
-  } catch(err) {
+
+    if (cekData.ok) {
+      const existing = (cekData.result || []).filter(r => r[0] === tanggal && r[2] === kelas);
+      if (existing.length > 0) {
+        const pillsHTML = existing.map(r =>
+          `<span class="name-pill">${escapeHtml(r[3])}</span>`
+        ).join('');
+        showConfirm({
+          title: '⚠️ Data sudah ada',
+          body: `Absensi <strong>Kelas ${capitalize(kelas)} ${sesiLabel}</strong> untuk tanggal ini sudah tercatat.<br><br>
+                 <div style="margin:10px 0 4px;font-size:0.78rem;font-weight:800;color:var(--text-muted)">TERCATAT HADIR SEBELUMNYA</div>
+                 <div style="display:flex;flex-wrap:wrap;gap:6px">${pillsHTML}</div><br>
+                 Lanjutkan akan <strong>mengganti</strong> data lama dengan yang baru.`,
+          confirmLabel: 'Ganti Data Lama',
+          confirmClass: 'btn-danger',
+          onConfirm: doSimpan,
+        });
+        return;
+      }
+    }
+  } catch(_) {
     hideLoading();
-    showToast('❌ Gagal menyimpan, cek koneksi!', 'error');
   }
+
+  await doSimpan();
 }
 
 // clearAll tanpa confirm/toast (dipanggil setelah simpan)
@@ -422,31 +520,63 @@ function renderRekap(rows, bulan, sesi) {
     tengah: { hadir: 0 },
     besar:  { hadir: 0 },
   };
+  // byDate sekarang menyimpan nama per kelas juga
   const byDate = {};
 
   rows.forEach(r => {
     const tgl   = r[0];
     const sesiR = r[1] || '';
     const kelas = (r[2] || '').toLowerCase();
+    const nama  = (r[3] || '').trim();
 
     if (byKelas[kelas]) byKelas[kelas].hadir++;
 
     const key = `${tgl}||${sesiR}`;
-    if (!byDate[key]) byDate[key] = { tgl, sesi: sesiR, kecil: 0, tengah: 0, besar: 0 };
-    if (byDate[key][kelas] !== undefined) byDate[key][kelas]++;
+    if (!byDate[key]) byDate[key] = {
+      tgl, sesi: sesiR,
+      kecil: [], tengah: [], besar: []
+    };
+    if (byDate[key][kelas] !== undefined) byDate[key][kelas].push(nama);
   });
 
   const totalHadir = byKelas.kecil.hadir + byKelas.tengah.hadir + byKelas.besar.hadir;
 
-  const tableRows = Object.values(byDate)
-    .sort((a, b) => a.tgl.localeCompare(b.tgl) || a.sesi.localeCompare(b.sesi))
-    .map(d => `
-      <tr>
-        <td>${new Date(d.tgl).toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'})}</td>
+  const sortedDates = Object.values(byDate)
+    .sort((a, b) => a.tgl.localeCompare(b.tgl) || a.sesi.localeCompare(b.sesi));
+
+  const tableRows = sortedDates.map((d, i) => {
+    const total = d.kecil.length + d.tengah.length + d.besar.length;
+    const key   = `detail-${i}`;
+    const tglFmt = new Date(d.tgl).toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+
+    // Nama pills per kelas
+    const pills = (arr, icon) => arr.length
+      ? `<div class="detail-kelas"><span class="detail-kelas-label">${icon}</span><div class="detail-names">${arr.map(n=>`<span class="name-pill">${escapeHtml(n)}</span>`).join('')}</div></div>`
+      : '';
+
+    const detailHTML = `
+      <tr class="detail-row" id="${key}">
+        <td colspan="6">
+          <div class="detail-panel">
+            ${pills(d.kecil,  '🐣 Kecil')}
+            ${pills(d.tengah, '🌿 Tengah')}
+            ${pills(d.besar,  '⭐ Besar')}
+          </div>
+        </td>
+      </tr>`;
+
+    return `
+      <tr class="summary-row" onclick="toggleDetail('${key}')" role="button" tabindex="0"
+          onkeydown="if(event.key==='Enter')toggleDetail('${key}')">
+        <td>${tglFmt}</td>
         <td><span class="sesi-badge">${d.sesi}</span></td>
-        <td>${d.kecil}</td><td>${d.tengah}</td><td>${d.besar}</td>
-        <td><strong>${d.kecil + d.tengah + d.besar}</strong></td>
-      </tr>`).join('');
+        <td>${d.kecil.length}</td>
+        <td>${d.tengah.length}</td>
+        <td>${d.besar.length}</td>
+        <td><strong>${total}</strong> <span class="expand-icon" id="icon-${key}">›</span></td>
+      </tr>
+      ${detailHTML}`;
+  }).join('');
 
   content.innerHTML = `
     <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px;font-weight:700;letter-spacing:0.3px">
@@ -458,12 +588,20 @@ function renderRekap(rows, bulan, sesi) {
       <div class="stat-card"><div class="num">${byKelas.besar.hadir}</div><div class="lbl">⭐ Besar</div></div>
     </div>
     <p class="rekap-section-title">📆 Per Tanggal & Sesi</p>
+    <p class="rekap-tap-hint">👆 Ketuk baris untuk lihat nama lengkap yang hadir</p>
     <div class="rekap-table-wrap">
       <table class="rekap-table">
         <thead><tr><th>Tanggal</th><th>Sesi</th><th>🐣</th><th>🌿</th><th>⭐</th><th>Total</th></tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
     </div>`;
+}
+
+function toggleDetail(key) {
+  const detailRow = document.getElementById(key);
+  const summaryRow = detailRow ? detailRow.previousElementSibling : null;
+  const open = detailRow.classList.toggle('open');
+  if (summaryRow) summaryRow.classList.toggle('is-open', open);
 }
 
 /* ============================================================

@@ -7,7 +7,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Absensi Beloved Kids Cito</title>
-  <link rel="icon" type="image/x-icon" href="BK Cito.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
@@ -112,7 +111,7 @@
             placeholder="Nama anak baru..."
             autocomplete="off" autocorrect="off" autocapitalize="words"
             onkeydown="if(event.key==='Enter') addStudent('kecil')" />
-          <button class="btn btn-add" onclick="addStudent('kecil')" aria-label="Tambah anak baru">
+          <button class="btn btn-add" onclick="addStudent('kecil')" aria-label="Tambah siswa">
             ➕ Tambah
           </button>
         </div>
@@ -129,7 +128,7 @@
           </div>
         </div>
 
-        <div class="student-list" id="list-kecil" aria-label="Daftar anak kelas kecil"></div>
+        <div class="student-list" id="list-kecil" aria-label="Daftar siswa kelas kecil"></div>
         <div class="summary-bar" id="summary-kecil"></div>
 
         <div class="action-row">
@@ -137,7 +136,8 @@
             💾 Simpan Absensi
           </button>
         </div>
-        <div class="action-row" style="margin-top:8px">
+        <hr class="action-divider">
+        <div class="action-row">
           <button class="btn btn-ghost" onclick="selectAll('kecil')">✅ Semua Hadir</button>
           <button class="btn btn-ghost" onclick="clearAll('kecil')">✖ Reset Semua</button>
         </div>
@@ -175,7 +175,7 @@
             placeholder="Nama anak baru..."
             autocomplete="off" autocorrect="off" autocapitalize="words"
             onkeydown="if(event.key==='Enter') addStudent('tengah')" />
-          <button class="btn btn-add" onclick="addStudent('tengah')" aria-label="Tambah anak baru">
+          <button class="btn btn-add" onclick="addStudent('tengah')" aria-label="Tambah siswa">
             ➕ Tambah
           </button>
         </div>
@@ -190,13 +190,14 @@
             <div class="progress-bar-fill" id="progress-fill-tengah" style="width:0%"></div>
           </div>
         </div>
-        <div class="student-list" id="list-tengah" aria-label="Daftar anak kelas tengah"></div>
+        <div class="student-list" id="list-tengah" aria-label="Daftar siswa kelas tengah"></div>
         <div class="summary-bar" id="summary-tengah"></div>
 
         <div class="action-row">
           <button class="btn btn-primary" onclick="submitAbsensi('tengah')">💾 Simpan Absensi</button>
         </div>
-        <div class="action-row" style="margin-top:8px">
+        <hr class="action-divider">
+        <div class="action-row">
           <button class="btn btn-ghost" onclick="selectAll('tengah')">✅ Semua Hadir</button>
           <button class="btn btn-ghost" onclick="clearAll('tengah')">✖ Reset Semua</button>
         </div>
@@ -234,7 +235,7 @@
             placeholder="Nama anak baru..."
             autocomplete="off" autocorrect="off" autocapitalize="words"
             onkeydown="if(event.key==='Enter') addStudent('besar')" />
-          <button class="btn btn-add" onclick="addStudent('besar')" aria-label="Tambah anak baru">
+          <button class="btn btn-add" onclick="addStudent('besar')" aria-label="Tambah siswa">
             ➕ Tambah
           </button>
         </div>
@@ -249,13 +250,14 @@
             <div class="progress-bar-fill" id="progress-fill-besar" style="width:0%"></div>
           </div>
         </div>
-        <div class="student-list" id="list-besar" aria-label="Daftar anak kelas besar"></div>
+        <div class="student-list" id="list-besar" aria-label="Daftar siswa kelas besar"></div>
         <div class="summary-bar" id="summary-besar"></div>
 
         <div class="action-row">
           <button class="btn btn-primary" onclick="submitAbsensi('besar')">💾 Simpan Absensi</button>
         </div>
-        <div class="action-row" style="margin-top:8px">
+        <hr class="action-divider">
+        <div class="action-row">
           <button class="btn btn-ghost" onclick="selectAll('besar')">✅ Semua Hadir</button>
           <button class="btn btn-ghost" onclick="clearAll('besar')">✖ Reset Semua</button>
         </div>
@@ -299,12 +301,25 @@
   </main>
 
   <footer class="site-footer">
-    <p>Beloved Kids Cito &hearts; Melayani dengan Kasih</p>
+    <p>© 2026 Beloved Kids Cito &hearts; Melayani dengan Kasih</p>
   </footer>
+
+  <!-- CONFIRM MODAL -->
+  <div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)closeConfirmModal()">
+    <div class="modal-box confirm-modal-box" role="dialog" aria-modal="true">
+      <div class="confirm-icon-wrap" id="confirmModal-icon">⚠️</div>
+      <h3 class="confirm-title" id="confirmModal-title"></h3>
+      <div class="confirm-body" id="confirmModal-body"></div>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" id="confirmModal-cancel">Batal</button>
+        <button class="btn btn-primary confirm-btn-ok" id="confirmModal-ok"></button>
+      </div>
+    </div>
+  </div>
 
   <!-- EDIT SISWA MODAL -->
   <div class="modal-overlay" id="editModal" onclick="closeEditModal(event)">
-    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Edit Data Anak">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Edit Siswa">
       <div class="modal-header">
         <div class="modal-icon" style="font-size:1.3rem">&#9998;</div>
         <div>
