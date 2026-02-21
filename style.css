@@ -1121,3 +1121,196 @@ select.form-input {
     width: 92%;
   }
 }
+
+/* ============================================================
+   HELP BUTTON (di header)
+   ============================================================ */
+.help-btn {
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  margin-left: auto;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.35);
+  color: white;
+  font-size: 1rem;
+  font-weight: 900;
+  font-family: var(--font-body);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s;
+  touch-action: manipulation;
+  z-index: 10;
+}
+.help-btn:hover {
+  background: rgba(255,255,255,0.28);
+  border-color: rgba(255,255,255,0.6);
+  transform: scale(1.08);
+}
+.help-btn:active { transform: scale(0.92); }
+
+/* ============================================================
+   HELP MODAL
+   ============================================================ */
+.help-modal-box {
+  padding: 0;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 480px;
+  width: 96%;
+}
+
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 0;
+  flex-shrink: 0;
+}
+.help-header-text {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.help-icon { font-size: 1.6rem; line-height: 1; }
+
+/* Tab navigasi */
+.help-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 16px 20px 0;
+  flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.help-tabs::-webkit-scrollbar { display: none; }
+
+.help-tab {
+  padding: 8px 14px;
+  border-radius: 100px;
+  border: 1.5px solid rgba(123,17,32,0.18);
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+.help-tab.active {
+  background: var(--maroon);
+  border-color: var(--maroon);
+  color: white;
+  box-shadow: 0 3px 10px rgba(123,17,32,0.28);
+}
+.help-tab:not(.active):hover {
+  background: rgba(123,17,32,0.07);
+  border-color: rgba(123,17,32,0.30);
+  color: var(--maroon);
+}
+
+/* Konten panel */
+.help-content {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  padding: 0 20px 24px;
+  margin-top: 14px;
+}
+
+.help-panel { display: none; }
+.help-panel.active { display: block; animation: fadeUp 0.2s ease; }
+
+.help-lead {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* Steps (numbered) */
+.help-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.help-step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--maroon);
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.help-step-title {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.help-step-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.help-step-desc strong { color: var(--maroon); }
+
+/* Items (icon-based) */
+.help-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.help-item-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: rgba(123,17,32,0.07);
+  border: 1.5px solid rgba(123,17,32,0.14);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.help-item-title {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.help-item-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.help-item-desc strong { color: var(--maroon); }
+
+/* Note box */
+.help-note {
+  display: flex;
+  gap: 10px;
+  background: linear-gradient(135deg, #FFF8E1, #FFF3CD);
+  border: 1.5px solid rgba(212,160,23,0.35);
+  border-radius: var(--radius-xs);
+  padding: 12px 14px;
+  font-size: 0.8rem;
+  color: #5D4037;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+.help-note-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+@media (min-width: 600px) {
+  .help-modal-box { border-radius: 24px; }
+}

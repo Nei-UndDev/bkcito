@@ -39,9 +39,9 @@
         <h1 class="header-title">Beloved Kids Cito</h1>
         <p class="header-tagline">Sistem Absensi Jemaat Anak</p>
       </div>
+      <button class="help-btn" onclick="openHelp()" aria-label="Panduan penggunaan">?</button>
     </div>
     <div class="header-ring" aria-hidden="true"></div>
-    </div>
   </header>
 
   <!-- MAIN -->
@@ -304,6 +304,187 @@
   <footer class="site-footer">
     <p>© 2026 Beloved Kids Cito &hearts; Melayani dengan Kasih</p>
   </footer>
+
+  <!-- HELP MODAL -->
+  <div class="modal-overlay" id="helpModal" onclick="if(event.target===this)closeHelp()">
+    <div class="modal-box help-modal-box" role="dialog" aria-modal="true" aria-label="Panduan Penggunaan">
+
+      <div class="help-header">
+        <div class="help-header-text">
+          <div class="help-icon">📖</div>
+          <div>
+            <h3 class="modal-title">Panduan Penggunaan</h3>
+            <p class="modal-sub">Beloved Kids Cito</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeHelp()" aria-label="Tutup">✕</button>
+      </div>
+
+      <!-- Tab navigasi bantuan -->
+      <div class="help-tabs">
+        <button class="help-tab active" onclick="switchHelp('absensi', this)">✏️ Absensi</button>
+        <button class="help-tab" onclick="switchHelp('siswa', this)">👦 Data Anak</button>
+        <button class="help-tab" onclick="switchHelp('rekap', this)">📊 Rekap Data</button>
+        <button class="help-tab" onclick="switchHelp('tips', this)">💡 Tips</button>
+      </div>
+
+      <div class="help-content">
+
+        <!-- Panel: Absensi -->
+        <div class="help-panel active" id="help-absensi">
+          <div class="help-section">
+            <p class="help-lead">Cara mengisi absensi harian dalam 4 langkah mudah.</p>
+
+            <div class="help-step">
+              <div class="help-step-num">1</div>
+              <div>
+                <div class="help-step-title">Pilih Tanggal & Sesi</div>
+                <div class="help-step-desc">Pastikan tanggal ibadah dan sesi sudah benar sebelum mulai menandai kehadiran.</div>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">2</div>
+              <div>
+                <div class="help-step-title">Ketuk Nama Anak</div>
+                <div class="help-step-desc">Ketuk kartu nama untuk menandai <strong>Hadir</strong> — kartu berubah warna. Ketuk lagi untuk membatalkan.</div>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">3</div>
+              <div>
+                <div class="help-step-title">Gunakan Shortcut (Opsional)</div>
+                <div class="help-step-desc"><strong>Semua Hadir</strong> — tandai semua sekaligus. <strong>Reset Semua</strong> — batalkan semua tanda.</div>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">4</div>
+              <div>
+                <div class="help-step-title">Simpan Absensi</div>
+                <div class="help-step-desc">Ketuk <strong>Simpan Absensi</strong>. Jika ada anak yang sudah pernah diabsen di sesi ini, akan muncul konfirmasi sebelum data ditimpa.</div>
+              </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">💡</span>
+              <span>Satu anak bisa hadir di lebih dari satu sesi di hari yang sama — data tiap sesi tersimpan terpisah.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Siswa -->
+        <div class="help-panel" id="help-siswa">
+          <div class="help-section">
+            <p class="help-lead">Kelola daftar anak di tiap kelas.</p>
+
+            <div class="help-item">
+              <div class="help-item-icon">➕</div>
+              <div>
+                <div class="help-item-title">Tambah Anak Baru</div>
+                <div class="help-item-desc">Ketik nama di kolom "Nama anak baru..." lalu ketuk <strong>Tambah</strong> atau tekan Enter. Nama langsung tersimpan ke Google Sheets.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">✎</div>
+              <div>
+                <div class="help-item-title">Edit Nama / Pindah Kelas</div>
+                <div class="help-item-desc">Ketuk tombol <strong>✎</strong> di kartu anak untuk mengubah nama atau memindahkan ke kelas lain. Riwayat absensi lama tetap aman.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">✕</div>
+              <div>
+                <div class="help-item-title">Hapus Anak</div>
+                <div class="help-item-desc">Ketuk tombol <strong>✕</strong> merah di kartu anak. Muncul konfirmasi sebelum data dihapus dari daftar.</div>
+              </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">📦</span>
+              <span>Saat anak dipindah kelas, riwayat absensi di kelas lama <strong>tidak hilang</strong> — tetap tersimpan di sheet Absensi.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Rekap -->
+        <div class="help-panel" id="help-rekap">
+          <div class="help-section">
+            <p class="help-lead">Lihat laporan bulanan dan export data.</p>
+
+            <div class="help-step">
+              <div class="help-step-num">1</div>
+              <div>
+                <div class="help-step-title">Pilih Bulan & Sesi</div>
+                <div class="help-step-desc">Pilih bulan dari dropdown. Filter sesi bersifat opsional — kosongkan untuk lihat semua sesi.</div>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">2</div>
+              <div>
+                <div class="help-step-title">Ketuk Tampilkan</div>
+                <div class="help-step-desc">Data kehadiran per kelas dan per tanggal akan dimuat dari Google Sheets.</div>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">3</div>
+              <div>
+                <div class="help-step-title">Lihat Detail Nama</div>
+                <div class="help-step-desc">Ketuk baris mana saja di tabel untuk melihat nama-nama anak yang hadir di sesi tersebut.</div>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">4</div>
+              <div>
+                <div class="help-step-title">Export Data</div>
+                <div class="help-step-desc">Ketuk <strong>Export</strong> untuk mengunduh data dalam format <strong>CSV</strong>, <strong>Excel (.xlsx)</strong>, atau <strong>PDF</strong> siap cetak.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Tips -->
+        <div class="help-panel" id="help-tips">
+          <div class="help-section">
+            <p class="help-lead">Tips agar penggunaan makin lancar.</p>
+
+            <div class="help-item">
+              <div class="help-item-icon">📱</div>
+              <div>
+                <div class="help-item-title">Simpan ke Home Screen</div>
+                <div class="help-item-desc">Di iPhone: Safari → tombol Share → "Add to Home Screen". Di Android: Chrome → menu ⋮ → "Add to Home Screen". Biar bisa dibuka kayak aplikasi!</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">🌐</div>
+              <div>
+                <div class="help-item-title">Butuh Internet</div>
+                <div class="help-item-desc">Koneksi internet diperlukan untuk memuat daftar anak dan menyimpan absensi ke Google Sheets.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">⚠️</div>
+              <div>
+                <div class="help-item-title">Data Ditimpa?</div>
+                <div class="help-item-desc">Kalau simpan absensi di tanggal + sesi yang sama lebih dari sekali, data lama akan diganti. Konfirmasi selalu muncul jika ada nama yang bentrok.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">🔄</div>
+              <div>
+                <div class="help-item-title">Daftar Kosong / Error</div>
+                <div class="help-item-desc">Coba refresh halaman dan pastikan koneksi internet stabil. Kalau masih error, hubungi Developer.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end help-content -->
+    </div>
+  </div>
 
   <!-- CONFIRM MODAL -->
   <div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)closeConfirmModal()">

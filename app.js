@@ -308,6 +308,24 @@ function openEditModal(kelas, idx) {
   setTimeout(() => document.getElementById('editModal-nama').focus(), 120);
 }
 
+/* ============================================================
+   HELP MODAL
+   ============================================================ */
+function openHelp() {
+  document.getElementById('helpModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeHelp() {
+  document.getElementById('helpModal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function switchHelp(panel, btn) {
+  document.querySelectorAll('.help-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.help-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('help-' + panel).classList.add('active');
+  btn.classList.add('active');
+}
+
 function toggleEditInfoBox() {
   const kelas = document.getElementById('editModal-kelas').value;
   const orig  = document.getElementById('editModal-origKelas').value;
