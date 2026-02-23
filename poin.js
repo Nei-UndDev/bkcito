@@ -421,26 +421,53 @@ async function simpanPoinDelta(id, nama, kelas, delta, label) {
    TAMBAH AKTIVITAS CUSTOM
    ============================================================ */
 function openAddAktivitas() {
-  closePoinModal();
-  const namaAkt = prompt('Nama aktivitas baru:');
-  if (!namaAkt || !namaAkt.trim()) return;
-  const nilaiStr = prompt(`Berapa poin untuk "${namaAkt.trim()}"?`, '1');
-  const nilai    = parseInt(nilaiStr) || 1;
-
-  saveAktivitasCustom(namaAkt.trim(), nilai);
+  // Tutup modal poin dulu, buka modal form
+  document.getElementById('poinModal').classList.remove('show');
+  document.getElementById('addAktModal').classList.add('show');
+  document.getElementById('newAktNama').value  = '';
+  document.getElementById('newAktIcon').value  = '🌟';
+  setTimeout(() => document.getElementById('newAktNama').focus(), 100);
 }
 
-async function saveAktivitasCustom(namaAkt, nilai) {
+function closeAddAktModal() {
+  document.getElementById('addAktModal').classList.remove('show');
+  // Buka kembali modal poin
+  document.getElementById('poinModal').classList.add('show');
+}
+
+function pickIcon(emoji) {
+  const inp = document.getElementById('newAktIcon');
+  inp.value = '';           // kosongkan dulu biar maxlength ga blokir
+  inp.removeAttribute('maxlength');
+  inp.value = emoji;
+}
+
+function saveNewAktivitas() {
+  const nama = document.getElementById('newAktNama').value.trim();
+  const icon = document.getElementById('newAktIcon').value.trim() || '🌟';
+  if (!nama) {
+    document.getElementById('newAktNama').focus();
+    document.getElementById('newAktNama').style.borderColor = 'var(--maroon)';
+    return;
+  }
+  document.getElementById('addAktModal').classList.remove('show');
+  document.body.style.overflow = 'hidden'; // poin modal masih open
+  saveAktivitasCustom(nama, icon);
+}
+
+async function saveAktivitasCustom(namaAkt, icon) {
   showLoading('Menyimpan aktivitas...');
   try {
-    const payload = encodeURIComponent(JSON.stringify({ nama: namaAkt, poin: nilai }));
+    const payload = encodeURIComponent(JSON.stringify({ nama: namaAkt, icon, poin: 1 }));
     await fetch(`${APPS_SCRIPT_URL}?action=tambahAktivitas&data=${payload}`, { mode: 'no-cors' });
 
     state.aktivitas.push({
-      id: `custom_${namaAkt}`, label: namaAkt, icon: '🌟', poin: nilai,
+      id: `custom_${namaAkt}`, label: namaAkt, icon, poin: 1,
     });
     hideLoading();
-    showToast(`✅ Aktivitas "${namaAkt}" (+${nilai} poin) ditambahkan!`, 'success');
+    showToast(`✅ Aktivitas "${namaAkt}" ditambahkan!`, 'success');
+    // Re-render grid di modal poin yang sudah terbuka
+    renderAktivitasGrid();
   } catch (err) {
     hideLoading();
     showToast('⚠️ Gagal simpan aktivitas', 'error');
