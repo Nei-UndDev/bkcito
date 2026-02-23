@@ -1314,3 +1314,40 @@ select.form-input {
 @media (min-width: 600px) {
   .help-modal-box { border-radius: 24px; }
 }
+
+/* ============================================================
+   POIN SHORTCUT BAR (di halaman absensi)
+   ============================================================ */
+.poin-shortcut-bar {
+  max-width: 740px;
+  margin: 0 auto 10px;
+}
+.poin-shortcut-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #FFF8E1, #FDF3D0);
+  border: 1.5px solid rgba(212,160,23,0.40);
+  border-radius: var(--radius-xs);
+  padding: 12px 16px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 800;
+  font-size: 0.88rem;
+  transition: all 0.18s;
+  touch-action: manipulation;
+}
+.poin-shortcut-btn:hover {
+  background: linear-gradient(135deg, #FFF3CD, #FDE8A0);
+  border-color: rgba(212,160,23,0.65);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(212,160,23,0.22);
+}
+.poin-shortcut-btn:active { transform: scale(0.98); }
+.poin-shortcut-btn span:first-child { font-size: 1.1rem; }
+.poin-shortcut-btn span:nth-child(2) { flex: 1; }
+.poin-shortcut-arrow {
+  font-size: 1.1rem;
+  color: var(--gold);
+  font-weight: 900;
+}

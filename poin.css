@@ -1,0 +1,428 @@
+/* ============================================================
+   POIN.CSS — Halaman Sistem Poin Beloved Kids Cito
+   ============================================================ */
+
+/* ── Back bar ─────────────────────────────────────────────── */
+.back-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 740px;
+  margin: 0 auto 12px;
+  padding: 0 4px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--maroon);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 100px;
+  background: rgba(123,17,32,0.07);
+  border: 1.5px solid rgba(123,17,32,0.18);
+  transition: all 0.18s;
+  touch-action: manipulation;
+}
+.back-btn:hover {
+  background: rgba(123,17,32,0.13);
+  border-color: rgba(123,17,32,0.32);
+}
+.back-btn:active { transform: scale(0.94); }
+
+.year-badge {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--maroon);
+  background: rgba(212,160,23,0.15);
+  border: 1.5px solid rgba(212,160,23,0.40);
+  border-radius: 100px;
+  padding: 6px 14px;
+  letter-spacing: 0.4px;
+}
+
+/* ── Panel wrap ───────────────────────────────────────────── */
+.poin-panel-wrap {
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+.poin-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.poin-panel-header h2 { margin: 0; font-size: 1.2rem; }
+.poin-panel-header p  { margin: 0; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+.poin-panel-header > div:nth-child(2) { flex: 1; }
+
+/* Reset button */
+.poin-reset-btn {
+  background: transparent;
+  border: 1.5px solid rgba(123,17,32,0.22);
+  border-radius: 100px;
+  padding: 7px 14px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--maroon);
+  cursor: pointer;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  transition: all 0.18s;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+.poin-reset-btn:hover {
+  background: rgba(123,17,32,0.07);
+  border-color: rgba(123,17,32,0.38);
+}
+.poin-reset-btn:active { transform: scale(0.94); }
+
+/* ── Leaderboard cards ────────────────────────────────────── */
+.poin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.poin-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #F8F1ED;
+  border: 1.5px solid rgba(123,17,32,0.09);
+  border-radius: var(--radius-xs);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.18s;
+  touch-action: manipulation;
+  user-select: none;
+}
+.poin-card:hover {
+  border-color: rgba(123,17,32,0.25);
+  box-shadow: 0 3px 14px rgba(123,17,32,0.09);
+  transform: translateY(-1px);
+}
+.poin-card:active { transform: scale(0.98); }
+
+/* Top 3 special styling */
+.poin-card:nth-child(1) {
+  background: linear-gradient(135deg, #FFF8E1, #FFF3CD);
+  border-color: rgba(212,160,23,0.35);
+}
+.poin-card:nth-child(2) {
+  background: linear-gradient(135deg, #F5F5F5, #ECECEC);
+  border-color: rgba(150,150,150,0.30);
+}
+.poin-card:nth-child(3) {
+  background: linear-gradient(135deg, #FFF0E8, #FFE5D5);
+  border-color: rgba(180,90,40,0.25);
+}
+
+.poin-rank {
+  font-size: 1.3rem;
+  min-width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.poin-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--maroon-deep), var(--maroon));
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+}
+
+.poin-info {
+  flex: 1;
+  min-width: 0;
+}
+.poin-nama {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.poin-bar-wrap {
+  height: 5px;
+  background: rgba(123,17,32,0.10);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.poin-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--maroon), var(--gold));
+  border-radius: 100px;
+  transition: width 0.5s ease;
+  min-width: 4px;
+}
+
+.poin-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.poin-angka {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--maroon-deep);
+  font-family: var(--font-display);
+  line-height: 1;
+}
+.poin-label-pts {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ── Modal poin ───────────────────────────────────────────── */
+.poin-modal-box {
+  padding-bottom: 24px;
+}
+
+.poin-modal-avatar {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--maroon-deep), var(--maroon));
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.poin-modal-label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 16px 0 10px;
+}
+
+/* Aktivitas grid */
+.aktivitas-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.aktivitas-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border-radius: var(--radius-xs);
+  border: 1.5px solid rgba(123,17,32,0.14);
+  background: #F8F1ED;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.18s;
+  touch-action: manipulation;
+  position: relative;
+}
+.aktivitas-btn:hover {
+  border-color: var(--maroon);
+  background: rgba(123,17,32,0.06);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(123,17,32,0.12);
+}
+.aktivitas-btn:active { transform: scale(0.95); }
+
+.aktivitas-icon  { font-size: 1.5rem; line-height: 1; }
+.aktivitas-label { font-size: 0.76rem; font-weight: 800; color: var(--text); text-align: center; }
+.aktivitas-poin  {
+  position: absolute;
+  top: 6px; right: 8px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: white;
+  background: var(--maroon);
+  border-radius: 100px;
+  padding: 2px 7px;
+}
+
+.aktivitas-add-btn {
+  border-style: dashed;
+  border-color: rgba(123,17,32,0.22);
+  background: transparent;
+  color: var(--text-muted);
+}
+.aktivitas-add-btn .aktivitas-icon { font-size: 1.2rem; color: var(--text-muted); }
+.aktivitas-add-btn .aktivitas-label { color: var(--text-muted); }
+
+
+
+/* ── Global leaderboard extras ────────────────────────────── */
+.poin-kelas-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border: 1.5px solid;
+  border-radius: 100px;
+  padding: 2px 9px;
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+}
+
+/* Global card — sedikit lebih compact karena ada kelas badge */
+.poin-card-global .poin-info { gap: 2px; }
+.poin-card-global .poin-bar-wrap { margin-top: 4px !important; }
+
+/* ── Multiselect aktivitas ────────────────────────────────── */
+.aktivitas-btn.selected {
+  border-color: var(--maroon);
+  background: rgba(123,17,32,0.08);
+  box-shadow: 0 0 0 2px rgba(123,17,32,0.20);
+}
+.aktivitas-btn.selected .aktivitas-poin {
+  background: var(--gold);
+  color: var(--maroon-deep);
+}
+.aktivitas-btn.selected .aktivitas-label {
+  color: var(--maroon);
+}
+
+/* Submit bar — muncul saat ada yang dipilih */
+.poin-submit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(123,17,32,0.06), rgba(123,17,32,0.03));
+  border: 1.5px solid rgba(123,17,32,0.18);
+  border-radius: var(--radius-xs);
+  padding: 10px 14px;
+  margin-top: 10px;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.poin-submit-bar.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.poin-submit-info {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--maroon);
+}
+.poin-submit-info span {
+  font-weight: 900;
+  font-size: 1rem;
+}
+.poin-submit-btn {
+  min-height: 40px;
+  width: auto;
+  padding: 8px 20px;
+  font-size: 0.86rem;
+  flex-shrink: 0;
+}
+
+/* ── Filter bar ───────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 740px;
+  margin: 0 auto 10px;
+  flex-wrap: wrap;
+}
+.filter-label {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.filter-btn {
+  padding: 7px 14px;
+  border-radius: 100px;
+  border: 1.5px solid rgba(123,17,32,0.18);
+  background: transparent;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s;
+  touch-action: manipulation;
+}
+.filter-btn.active {
+  background: var(--maroon);
+  border-color: var(--maroon);
+  color: white;
+  box-shadow: 0 2px 8px rgba(123,17,32,0.25);
+}
+.filter-btn:not(.active):hover {
+  background: rgba(123,17,32,0.07);
+  border-color: rgba(123,17,32,0.30);
+  color: var(--maroon);
+}
+
+/* ── Aktivitas selected state ─────────────────────────────── */
+.aktivitas-btn.selected {
+  background: linear-gradient(135deg, rgba(123,17,32,0.10), rgba(123,17,32,0.06));
+  border-color: var(--maroon);
+  box-shadow: 0 0 0 2px rgba(123,17,32,0.20);
+}
+.aktivitas-btn.selected .aktivitas-label { color: var(--maroon); }
+.aktivitas-btn.selected .aktivitas-poin  { background: var(--maroon-deep); }
+
+/* ── Submit bar ───────────────────────────────────────────── */
+.poin-submit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, #FFF8E1, #FDF3D0);
+  border: 1.5px solid rgba(212,160,23,0.35);
+  border-radius: var(--radius-xs);
+  padding: 12px 14px;
+  margin-top: 12px;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.poin-submit-bar.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+.poin-submit-info {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #5D4037;
+}
+.poin-submit-btn {
+  white-space: nowrap;
+  min-height: 40px;
+  padding: 8px 20px;
+  font-size: 0.86rem;
+}
