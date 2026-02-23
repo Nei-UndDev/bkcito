@@ -235,6 +235,24 @@ function renderPanel(kelas) {
 }
 
 /* ============================================================
+   HELP MODAL POIN
+   ============================================================ */
+function openPoinHelp() {
+  document.getElementById('poinHelpModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closePoinHelp() {
+  document.getElementById('poinHelpModal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function switchPoinHelp(panel, btn) {
+  document.querySelectorAll('#poinHelpModal .help-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#poinHelpModal .help-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(`phelp-${panel}`).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ============================================================
    FILTER BAR
    ============================================================ */
 function renderFilter() {

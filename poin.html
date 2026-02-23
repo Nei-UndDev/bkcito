@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Poin — Beloved Kids Cito</title>
-    <link rel="icon" type="image/x-icon" href="BK Cito.ico">
+  <link rel="icon" type="image/x-icon" href="BK Cito.jpeg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
@@ -40,6 +40,7 @@
         <h1 class="header-title">Beloved Kids Cito</h1>
         <p class="header-tagline">Sistem Poin Jemaat Anak</p>
       </div>
+      <button class="help-btn" onclick="openPoinHelp()" aria-label="Panduan penggunaan">?</button>
     </div>
     <div class="header-ring" aria-hidden="true"></div>
   </header>
@@ -112,6 +113,128 @@
       </div>
 
 
+    </div>
+  </div>
+
+  <!-- MODAL: HELP -->
+  <div class="modal-overlay" id="poinHelpModal" onclick="if(event.target===this)closePoinHelp()">
+    <div class="modal-box help-modal-box" role="dialog" aria-modal="true" aria-label="Panduan Poin">
+
+      <div class="help-header">
+        <div class="help-header-text">
+          <div class="help-icon">🏅</div>
+          <div>
+            <h3 class="modal-title">Panduan Poin</h3>
+            <p class="modal-sub">Beloved Kids Cito</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closePoinHelp()">✕</button>
+      </div>
+
+      <div class="help-tabs">
+        <button class="help-tab active" onclick="switchPoinHelp('cara', this)">🏆 Cara Pakai</button>
+        <button class="help-tab" onclick="switchPoinHelp('filter', this)">📅 Filter</button>
+        <button class="help-tab" onclick="switchPoinHelp('kelola', this)">⚙️ Kelola</button>
+      </div>
+
+      <div class="help-content">
+
+        <!-- Panel: Cara Pakai -->
+        <div class="help-panel active" id="phelp-cara">
+          <div class="help-section">
+            <p class="help-lead">Cara memberikan poin ke anak dalam 3 langkah.</p>
+
+            <div class="help-step">
+              <div class="help-step-num">1</div>
+              <div>
+                <div class="help-step-title">Ketuk Nama Anak</div>
+                <div class="help-step-desc">Ketuk kartu nama di papan peringkat untuk membuka modal poin anak tersebut.</div>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">2</div>
+              <div>
+                <div class="help-step-title">Pilih Aktivitas</div>
+                <div class="help-step-desc">Ketuk satu atau lebih aktivitas yang dilakukan anak. Kartu yang dipilih akan ter-highlight. Setiap aktivitas bernilai <strong>+1 poin</strong>.</div>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">3</div>
+              <div>
+                <div class="help-step-title">Ketuk Tambah Poin</div>
+                <div class="help-step-desc">Bar kuning di bawah menampilkan jumlah aktivitas yang dipilih. Ketuk <strong>Tambah Poin</strong> untuk menyimpan.</div>
+              </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">💡</span>
+              <span>Poin tersimpan otomatis ke Google Sheets dan papan peringkat langsung terupdate.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Filter -->
+        <div class="help-panel" id="phelp-filter">
+          <div class="help-section">
+            <p class="help-lead">Filter papan peringkat berdasarkan periode waktu.</p>
+
+            <div class="help-item">
+              <div class="help-item-icon">📊</div>
+              <div>
+                <div class="help-item-title">Semua</div>
+                <div class="help-item-desc">Tampilkan total poin kumulatif sejak awal — tidak terbatas waktu.</div>
+              </div>
+            </div>
+            <div class="help-item">
+              <div class="help-item-icon">📅</div>
+              <div>
+                <div class="help-item-title">Tahun Ini / Bulan Ini / Minggu Ini</div>
+                <div class="help-item-desc">Hanya menghitung poin yang diperoleh dalam periode tersebut. Data diambil dari log transaksi poin (<strong>Poin_Log</strong> di Google Sheets).</div>
+              </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">📦</span>
+              <span>Filter per periode hanya berlaku untuk poin yang dicatat <strong>setelah fitur ini diaktifkan</strong>. Poin lama tidak memiliki histori tanggal.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Kelola -->
+        <div class="help-panel" id="phelp-kelola">
+          <div class="help-section">
+            <p class="help-lead">Kelola aktivitas dan reset poin tahunan.</p>
+
+            <div class="help-item">
+              <div class="help-item-icon">➕</div>
+              <div>
+                <div class="help-item-title">Tambah Aktivitas Custom</div>
+                <div class="help-item-desc">Di dalam modal poin, ketuk <strong>Tambah Aktivitas</strong> → isi nama dan pilih emoji → Simpan. Aktivitas baru muncul di semua anak.</div>
+              </div>
+            </div>
+            <div class="help-item">
+              <div class="help-item-icon">🗑️</div>
+              <div>
+                <div class="help-item-title">Hapus Aktivitas Custom</div>
+                <div class="help-item-desc">Buka Google Sheets → sheet <strong>Aktivitas</strong> → hapus baris yang tidak diperlukan. Aktivitas default (Mimpin Doa, Kesaksian, Jawab Kuis) tidak bisa dihapus dari sini.</div>
+              </div>
+            </div>
+            <div class="help-item">
+              <div class="help-item-icon">🔄</div>
+              <div>
+                <div class="help-item-title">Reset Poin Tahunan</div>
+                <div class="help-item-desc">Ketuk <strong>Reset Tahun</strong> di pojok kanan panel. Semua poin direset ke 0, tapi data lama otomatis diarsipkan ke sheet <strong>Poin_Arsip</strong> — tidak hilang permanen.</div>
+              </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">⚠️</span>
+              <span>Reset poin tidak bisa diurungkan dari aplikasi. Pastikan sudah yakin sebelum reset.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 
