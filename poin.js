@@ -532,12 +532,37 @@ async function doResetPoin() {
 /* ============================================================
    UTILS (sama seperti di app.js)
    ============================================================ */
+const _poinLoadingEmojis = ['🏅','🌟','🏆','🙏','💛','🎉'];
+const _poinLoadingSubs = [
+  'Bentar ya, lagi ngambil data poin...',
+  'Konek ke Google Sheets...',
+  'Hampir selesai nih!',
+];
+let _poinEmojiIdx = 0;
+let _poinEmojiTimer = null;
+
 function showLoading(msg = 'Memuat...') {
   document.getElementById('loadingMsg').textContent = msg;
   document.getElementById('loadingOverlay').classList.add('show');
+  _poinEmojiIdx = 0;
+  const emojiEl = document.getElementById('loadingEmoji');
+  const subEl   = document.getElementById('loadingSub');
+  if (emojiEl) emojiEl.textContent = _poinLoadingEmojis[0];
+  if (subEl)   subEl.textContent   = _poinLoadingSubs[0];
+  _poinEmojiTimer = setInterval(() => {
+    _poinEmojiIdx = (_poinEmojiIdx + 1) % _poinLoadingEmojis.length;
+    if (emojiEl) {
+      emojiEl.style.animation = 'none';
+      emojiEl.textContent = _poinLoadingEmojis[_poinEmojiIdx];
+      void emojiEl.offsetWidth;
+      emojiEl.style.animation = '';
+    }
+    if (subEl) subEl.textContent = _poinLoadingSubs[Math.min(_poinEmojiIdx, _poinLoadingSubs.length - 1)];
+  }, 1200);
 }
 function hideLoading() {
   document.getElementById('loadingOverlay').classList.remove('show');
+  clearInterval(_poinEmojiTimer);
 }
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');

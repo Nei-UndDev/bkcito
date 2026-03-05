@@ -75,16 +75,40 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function populateBulanDropdown() {
-  const sel = document.getElementById('rekap-bulan');
+  const dari   = document.getElementById('rekap-dari');
+  const sampai = document.getElementById('rekap-sampai');
+  if (!dari || !sampai) return;
   const now = new Date();
-  for (let i = 0; i < 12; i++) {
+  const opts = [];
+  for (let i = 0; i < 24; i++) {
     const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     const lbl = d.toLocaleDateString('id-ID', { month:'long', year:'numeric' });
-    const opt = document.createElement('option');
-    opt.value = val; opt.textContent = lbl;
-    sel.appendChild(opt);
+    opts.push({ val, lbl });
   }
+  [dari, sampai].forEach((sel, idx) => {
+    sel.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = ''; placeholder.textContent = '— Pilih Bulan —';
+    sel.appendChild(placeholder);
+    opts.forEach(({ val, lbl }) => {
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = lbl;
+      sel.appendChild(opt);
+    });
+    // default: dari = bulan lalu, sampai = bulan ini
+    if (opts.length) {
+      sel.value = idx === 0
+        ? (opts[1] ? opts[1].val : opts[0].val)  // dari = bulan lalu
+        : opts[0].val;                             // sampai = bulan ini
+    }
+  });
+}
+
+// Helper: ambil nilai rekap-bulan (untuk export compatibility)
+function _getRekapBulan() {
+  const dari = document.getElementById('rekap-dari');
+  return dari ? dari.value : '';
 }
 
 /* ============================================================
@@ -124,7 +148,8 @@ async function loadSiswa() {
       const kelas = (row[1]||'').trim().toLowerCase();
       const id    = (row[2]||'').trim();
       if (nama && ['kecil','tengah','besar'].includes(kelas)) {
-        state[kelas].students.push({ id, nama });
+        const fotoUrl = (row[3]||'').trim() || null;   // kolom ke-4 di sheet Siswa
+        state[kelas].students.push({ id, nama, fotoUrl });
       }
     });
 
@@ -184,13 +209,17 @@ function renderStudents(kelas) {
   listEl.innerHTML = s.students.map((stu, i) => {
     const isHadir = !!s.attendance[stu.id];
     const initial = stu.nama.trim().charAt(0).toUpperCase();
+    const foto    = stu.fotoUrl || null;
+    const avatarContent = foto
+      ? `<img src="${foto}" alt="" class="avatar-img${isHadir?' hadir-dim':''}" onerror="this.parentElement.innerHTML='${isHadir?'✓':initial}';this.parentElement.classList.remove('has-foto')" />${isHadir?'<span class=\"avatar-check\">✓</span>':''}`
+      : (isHadir ? '✓' : initial);
     return `
       <div class="student-item ${isHadir ? 'hadir' : ''}"
            onclick="toggleAttendance('${kelas}','${stu.id}')"
            role="button" tabindex="0"
            aria-label="${stu.nama} — ${isHadir ? 'Hadir' : 'Belum absen'}"
            onkeydown="if(event.key==='Enter'||event.key===' ')toggleAttendance('${kelas}','${stu.id}')">
-        <div class="student-avatar" aria-hidden="true">${isHadir ? '✓' : initial}</div>
+        <div class="student-avatar${foto?' has-foto':''}" aria-hidden="true">${avatarContent}</div>
         <div class="student-name">${escapeHtml(stu.nama)}</div>
         <div class="student-status">${isHadir ? '✓ Hadir' : '— Absen'}</div>
         <div class="student-actions">
@@ -297,12 +326,23 @@ function deleteStudent(kelas, idx) {
    ============================================================ */
 function openEditModal(kelas, idx) {
   const stu = state[kelas].students[idx];
-  document.getElementById('editModal-nama').value    = stu.nama;
-  document.getElementById('editModal-kelas').value   = kelas;
+  document.getElementById('editModal-nama').value      = stu.nama;
+  document.getElementById('editModal-kelas').value     = kelas;
   document.getElementById('editModal-origKelas').value = kelas;
-  document.getElementById('editModal-idx').value     = idx;
-  document.getElementById('editModal-id').value      = stu.id;
+  document.getElementById('editModal-idx').value       = idx;
+  document.getElementById('editModal-id').value        = stu.id;
   document.getElementById('editModal-title').textContent = stu.nama;
+
+  // Reset foto state
+  window._fotoState = { changed: false, newDataUrl: null, deleteExisting: false };
+
+  // Show existing foto or placeholder
+  if (stu.fotoUrl) {
+    _showFotoPreview(stu.fotoUrl);
+  } else {
+    _clearFotoPreview();
+  }
+
   document.getElementById('editModal').classList.add('show');
   document.body.style.overflow = 'hidden';
   setTimeout(() => document.getElementById('editModal-nama').focus(), 120);
@@ -373,21 +413,202 @@ async function saveEditModal() {
 
   document.getElementById('editModal').classList.remove('show');
   document.body.style.overflow = '';
+  document.getElementById('fotoInlineConfirm')?.remove();
 
-  const label = pindah
-    ? `✅ ${namaBaru} dipindah ke Kelas ${capitalize(kelasBaru)}!`
-    : `✅ Nama diperbarui!`;
-  showToast(label, 'success');
+  const fs          = window._fotoState;
+  const namaChanged = namaBaru !== namaLama;
+  const fotoChanged = fs && fs.changed;
 
-  // Simpan perubahan ke Apps Script
-  try {
-    const payload = encodeURIComponent(JSON.stringify({
-      id, namaLama, namaBaru, kelasLama, kelasBaru
-    }));
-    await fetch(`${APPS_SCRIPT_URL}?action=editSiswa&data=${payload}`, { mode: 'no-cors' });
-  } catch(err) {
-    showToast('⚠️ Gagal sinkron ke Sheets', 'error');
+  // Toast — hanya tampil kalau nama/kelas berubah, bukan kalau cuma foto
+  if (namaChanged || pindah) {
+    const label = pindah
+      ? `✅ ${namaBaru} dipindah ke Kelas ${capitalize(kelasBaru)}!`
+      : `✅ Nama diperbarui!`;
+    showToast(label, 'success');
   }
+
+  // Simpan perubahan nama/kelas ke Apps Script
+  if (namaChanged || pindah) {
+    try {
+      const payload = encodeURIComponent(JSON.stringify({
+        id, namaLama, namaBaru, kelasLama, kelasBaru
+      }));
+      await fetch(`${APPS_SCRIPT_URL}?action=editSiswa&data=${payload}`, { mode: 'no-cors' });
+    } catch(err) {
+      showToast('⚠️ Gagal sinkron nama ke Sheets', 'error');
+    }
+  }
+
+  // Upload / hapus foto ke GitHub (async, non-blocking)
+  if (fotoChanged) {
+    const btn = document.getElementById('btnSaveEdit');
+    if (fs.deleteExisting) {
+      _uploadFotoDrive(id, null, kelasBaru);
+    } else if (fs.newDataUrl) {
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Mengupload...'; }
+      _uploadFotoDrive(id, fs.newDataUrl, kelasBaru).finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = '&#x1F4BE; Simpan'; }
+      });
+    }
+  }
+}
+
+/* ============================================================
+   FOTO — Upload via Apps Script (token aman di server)
+   ============================================================ */
+
+// _fotoState: { changed, newDataUrl, deleteExisting }
+window._fotoState = { changed: false, newDataUrl: null, deleteExisting: false };
+
+/* ---- Handle file input change ---- */
+function handleFotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('⚠️ Ukuran foto maks 5MB ya!', 'error');
+    event.target.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    _resizeImage(e.target.result, 300, dataUrl => {
+      window._fotoState = { changed: true, newDataUrl: dataUrl, deleteExisting: false };
+      _showFotoPreview(dataUrl);
+    });
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+/* ---- Resize ke max N px sebelum upload ---- */
+function _resizeImage(dataUrl, maxSize, callback) {
+  const img = new Image();
+  img.onload = () => {
+    let w = img.width, h = img.height;
+    if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+    else       { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', 0.85));
+  };
+  img.src = dataUrl;
+}
+
+/* ---- Show preview image in upload area ---- */
+function _showFotoPreview(url) {
+  document.getElementById('fotoPreview').src = url;
+  document.getElementById('fotoPreview').classList.remove('hidden');
+  document.getElementById('fotoPlaceholder').classList.add('hidden');
+  document.getElementById('btnRemoveFoto').classList.remove('hidden');
+  document.getElementById('fotoUploadArea').classList.add('has-foto');
+}
+function _clearFotoPreview() {
+  document.getElementById('fotoPreview').src = '';
+  document.getElementById('fotoPreview').classList.add('hidden');
+  document.getElementById('fotoPlaceholder').classList.remove('hidden');
+  document.getElementById('btnRemoveFoto').classList.add('hidden');
+  document.getElementById('fotoUploadArea').classList.remove('has-foto');
+}
+
+/* ---- Confirm remove — pakai inline confirm biar gak ketimpa editModal ---- */
+function confirmRemoveFoto() {
+  // Inject inline confirm bar ke dalam editModal
+  const area = document.getElementById('fotoUploadArea');
+  const existing = document.getElementById('fotoInlineConfirm');
+  if (existing) { existing.remove(); return; }
+
+  const bar = document.createElement('div');
+  bar.id = 'fotoInlineConfirm';
+  bar.style.cssText = `
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:rgba(192,57,43,0.08);border:1.5px solid rgba(192,57,43,0.3);
+    border-radius:12px;padding:10px 14px;margin-top:8px;
+    font-size:0.82rem;font-weight:700;color:#922B21;
+  `;
+  bar.innerHTML = `
+    <span>🗑 Hapus foto ini?</span>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('fotoInlineConfirm').remove()"
+        style="padding:5px 12px;border-radius:20px;border:1.5px solid rgba(192,57,43,0.3);
+               background:white;color:#922B21;font-weight:800;font-size:0.78rem;cursor:pointer;">
+        Batal
+      </button>
+      <button onclick="_doRemoveFoto()"
+        style="padding:5px 12px;border-radius:20px;border:none;
+               background:#C0392B;color:white;font-weight:800;font-size:0.78rem;cursor:pointer;">
+        Hapus
+      </button>
+    </div>
+  `;
+  area.parentElement.insertBefore(bar, area.nextSibling);
+}
+
+function _doRemoveFoto() {
+  document.getElementById('fotoInlineConfirm')?.remove();
+  window._fotoState = { changed: true, newDataUrl: null, deleteExisting: true };
+  _clearFotoPreview();
+}
+
+/* ---- Upload / delete foto — semua lewat Apps Script sebagai proxy ---- */
+async function _uploadFotoDrive(stuId, dataUrl, kelas) {
+  try {
+    const isDelete = !dataUrl;
+
+    if (isDelete) {
+      showToast('🗑 Menghapus foto...', '');
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'uploadFoto',
+          data: JSON.stringify({ id: stuId, kelas, delete: true })
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Gagal hapus foto');
+      _updateFotoState(stuId, null);
+      showToast('🗑 Foto dihapus', 'success');
+      return;
+    }
+
+    // ---- UPLOAD ----
+    showToast('📤 Mengupload foto...', '');
+    const base64 = dataUrl.split(',')[1];
+
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'uploadFoto',
+        data: JSON.stringify({ id: stuId, base64, kelas })
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Upload gagal');
+
+    // Apps Script return fotoUrl + cache-buster
+    const fotoUrl = data.result ? data.result + `?t=${Date.now()}` : null;
+    _updateFotoState(stuId, fotoUrl);
+    showToast('✅ Foto tersimpan!', 'success');
+
+  } catch (err) {
+    console.error('[uploadFoto]', err);
+    showToast('❌ Gagal upload foto: ' + err.message, 'error');
+  }
+}
+
+/* ---- Update fotoUrl di state & re-render ---- */
+function _updateFotoState(stuId, fotoUrl) {
+  ['kecil','tengah','besar'].forEach(k => {
+    const stu = state[k].students.find(s => s.id === stuId);
+    if (stu) {
+      stu.fotoUrl = fotoUrl;
+      renderStudents(k);
+    }
+  });
 }
 
 /* ============================================================
@@ -516,105 +737,114 @@ function clearAll_silent(kelas) {
    REKAP
    ============================================================ */
 async function loadRekap() {
-  const bulan = document.getElementById('rekap-bulan').value;
-  const sesi  = document.getElementById('rekap-sesi').value;
-  if (!bulan) { showToast('⚠️ Pilih bulan dulu!', 'error'); return; }
+  const dari   = document.getElementById('rekap-dari').value;
+  const sampai = document.getElementById('rekap-sampai').value;
+  const sesi   = document.getElementById('rekap-sesi').value;
+  if (!dari || !sampai) { showToast('⚠️ Pilih rentang bulan dulu!', 'error'); return; }
+  if (dari > sampai) { showToast('⚠️ Bulan awal harus sebelum bulan akhir!', 'error'); return; }
+
+  // dari = YYYY-MM → dari-01, sampai = YYYY-MM → sampai-31
+  const dariDate   = dari + '-01';
+  const sampaiDate = sampai + '-31';
 
   showLoading('Memuat rekap...');
   try {
-    const params = new URLSearchParams({ action: 'getRekap', bulan });
+    const params = new URLSearchParams({ action: 'getRekap', dari: dariDate, sampai: sampaiDate });
     if (sesi) params.set('sesi', `Sesi ${sesi}`);
     const res  = await fetch(`${APPS_SCRIPT_URL}?${params}`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Gagal memuat rekap');
     hideLoading();
 
-    // rows: [tanggal, sesi, kelas, nama, timestamp]
     state.rekapData = data.result || [];
-    renderRekap(state.rekapData, bulan, sesi);
+    renderRekap(state.rekapData, dari, sampai, sesi);
   } catch(err) {
     hideLoading();
     showToast('❌ Gagal memuat: ' + err.message, 'error');
   }
 }
 
-function renderRekap(rows, bulan, sesi) {
-  const content   = document.getElementById('rekap-content');
-  const namaBulan = new Date(bulan+'-01').toLocaleDateString('id-ID',{month:'long',year:'numeric'});
-  const sesiLabel = sesi ? ` · Sesi ${sesi}` : ' · Semua Sesi';
+/* Chart instances — simpan biar bisa di-destroy sebelum re-render */
+const _charts = {};
+
+function switchChart(type, btn) {
+  ['bar','line','pie'].forEach(t => {
+    document.getElementById(`chart-${t}-wrap`).style.display = t === type ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function _destroyChart(key) {
+  if (_charts[key]) { _charts[key].destroy(); delete _charts[key]; }
+}
+
+function renderRekap(rows, dari, sampai, sesi) {
+  const contentEl = document.getElementById('rekap-content');
+  const chartsEl  = document.getElementById('rekap-charts');
+
+  const labelDari   = new Date(dari+'-01').toLocaleDateString('id-ID',{month:'short',year:'numeric'});
+  const labelSampai = new Date(sampai+'-01').toLocaleDateString('id-ID',{month:'short',year:'numeric'});
+  const rangeLabel  = dari === sampai ? labelDari : `${labelDari} – ${labelSampai}`;
+  const sesiLabel   = sesi ? ` · Sesi ${sesi}` : ' · Semua Sesi';
 
   if (!rows.length) {
-    content.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p>Tidak ada data untuk periode ini</p></div>`;
+    chartsEl.style.display = 'none';
+    contentEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p>Tidak ada data untuk periode ini</p></div>`;
     return;
   }
 
-  // Setiap baris = 1 siswa hadir. Kolom: [0]tanggal [1]sesi [2]kelas [3]nama [4]timestamp
-  const byKelas = {
-    kecil:  { hadir: 0 },
-    tengah: { hadir: 0 },
-    besar:  { hadir: 0 },
-  };
-  // byDate sekarang menyimpan nama per kelas juga
-  const byDate = {};
+  const byKelas = { kecil: { hadir: 0 }, tengah: { hadir: 0 }, besar: { hadir: 0 } };
+  const byDate  = {};
+  const byMonth = {};
 
   rows.forEach(r => {
     const tgl   = r[0];
     const sesiR = r[1] || '';
     const kelas = (r[2] || '').toLowerCase();
     const nama  = (r[3] || '').trim();
-
     if (byKelas[kelas]) byKelas[kelas].hadir++;
 
+    // per date
     const key = `${tgl}||${sesiR}`;
-    if (!byDate[key]) byDate[key] = {
-      tgl, sesi: sesiR,
-      kecil: [], tengah: [], besar: []
-    };
+    if (!byDate[key]) byDate[key] = { tgl, sesi: sesiR, kecil:[], tengah:[], besar:[] };
     if (byDate[key][kelas] !== undefined) byDate[key][kelas].push(nama);
+
+    // per month (for line chart)
+    const month = tgl.slice(0,7);
+    if (!byMonth[month]) byMonth[month] = { kecil:0, tengah:0, besar:0 };
+    if (byMonth[month][kelas] !== undefined) byMonth[month][kelas]++;
   });
 
-  const totalHadir = byKelas.kecil.hadir + byKelas.tengah.hadir + byKelas.besar.hadir;
+  const totalHadir  = byKelas.kecil.hadir + byKelas.tengah.hadir + byKelas.besar.hadir;
+  const sortedDates = Object.values(byDate).sort((a,b) => a.tgl.localeCompare(b.tgl) || a.sesi.localeCompare(b.sesi));
 
-  const sortedDates = Object.values(byDate)
-    .sort((a, b) => a.tgl.localeCompare(b.tgl) || a.sesi.localeCompare(b.sesi));
-
+  // ── Table HTML ──
   const tableRows = sortedDates.map((d, i) => {
-    const total = d.kecil.length + d.tengah.length + d.besar.length;
-    const key   = `detail-${i}`;
+    const total  = d.kecil.length + d.tengah.length + d.besar.length;
+    const key    = `detail-${i}`;
     const tglFmt = new Date(d.tgl).toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
-
-    // Nama pills per kelas
-    const pills = (arr, icon) => arr.length
+    const pills  = (arr, icon) => arr.length
       ? `<div class="detail-kelas"><span class="detail-kelas-label">${icon}</span><div class="detail-names">${arr.map(n=>`<span class="name-pill">${escapeHtml(n)}</span>`).join('')}</div></div>`
       : '';
-
-    const detailHTML = `
-      <tr class="detail-row" id="${key}">
-        <td colspan="6">
-          <div class="detail-panel">
-            ${pills(d.kecil,  '🐣 Kecil')}
-            ${pills(d.tengah, '🌿 Tengah')}
-            ${pills(d.besar,  '⭐ Besar')}
-          </div>
-        </td>
-      </tr>`;
-
     return `
       <tr class="summary-row" onclick="toggleDetail('${key}')" role="button" tabindex="0"
           onkeydown="if(event.key==='Enter')toggleDetail('${key}')">
         <td>${tglFmt}</td>
         <td><span class="sesi-badge">${d.sesi}</span></td>
-        <td>${d.kecil.length}</td>
-        <td>${d.tengah.length}</td>
-        <td>${d.besar.length}</td>
+        <td>${d.kecil.length}</td><td>${d.tengah.length}</td><td>${d.besar.length}</td>
         <td><strong>${total}</strong> <span class="expand-icon" id="icon-${key}">›</span></td>
       </tr>
-      ${detailHTML}`;
+      <tr class="detail-row" id="${key}">
+        <td colspan="6"><div class="detail-panel">
+          ${pills(d.kecil,'🐣 Kecil')}${pills(d.tengah,'🌿 Tengah')}${pills(d.besar,'⭐ Besar')}
+        </div></td>
+      </tr>`;
   }).join('');
 
-  content.innerHTML = `
+  contentEl.innerHTML = `
     <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px;font-weight:700;letter-spacing:0.3px">
-      ${namaBulan.toUpperCase()}${sesiLabel} · Total hadir: <span style="color:var(--maroon)">${totalHadir} anak</span>
+      ${rangeLabel.toUpperCase()}${sesiLabel} · Total: <span style="color:var(--maroon)">${totalHadir} anak</span>
     </p>
     <div class="stat-grid">
       <div class="stat-card"><div class="num">${byKelas.kecil.hadir}</div><div class="lbl">🐣 Kecil</div></div>
@@ -622,13 +852,100 @@ function renderRekap(rows, bulan, sesi) {
       <div class="stat-card"><div class="num">${byKelas.besar.hadir}</div><div class="lbl">⭐ Besar</div></div>
     </div>
     <p class="rekap-section-title">📆 Per Tanggal & Sesi</p>
-    <p class="rekap-tap-hint">👆 Ketuk baris untuk lihat nama lengkap yang hadir</p>
+    <p class="rekap-tap-hint">👆 Ketuk baris untuk lihat nama lengkap</p>
     <div class="rekap-table-wrap">
       <table class="rekap-table">
         <thead><tr><th>Tanggal</th><th>Sesi</th><th>🐣</th><th>🌿</th><th>⭐</th><th>Total</th></tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
     </div>`;
+
+  // ── Show charts ──
+  chartsEl.style.display = 'block';
+
+  // Warna tema
+  const C = {
+    maroon:  '#7B1120', maroonA: 'rgba(123,17,32,0.75)',
+    gold:    '#D4A017', goldA:   'rgba(212,160,23,0.75)',
+    green:   '#27AE60', greenA:  'rgba(39,174,96,0.75)',
+    muted:   'rgba(123,17,32,0.08)',
+  };
+  const fontOpts = { family: "'Nunito', sans-serif", size: 11, weight: '700' };
+
+  // ── BAR CHART: kehadiran per tanggal (stacked) ──
+  _destroyChart('bar');
+  const barLabels = sortedDates.map(d => {
+    const dt = new Date(d.tgl);
+    return dt.toLocaleDateString('id-ID',{day:'numeric',month:'short'}) + ' ' + d.sesi.replace('Sesi ','S');
+  });
+  _charts.bar = new Chart(document.getElementById('chartBar'), {
+    type: 'bar',
+    data: {
+      labels: barLabels,
+      datasets: [
+        { label:'🐣 Kecil',  data: sortedDates.map(d=>d.kecil.length),  backgroundColor: C.maroonA, borderRadius:4 },
+        { label:'🌿 Tengah', data: sortedDates.map(d=>d.tengah.length), backgroundColor: C.goldA,   borderRadius:4 },
+        { label:'⭐ Besar',  data: sortedDates.map(d=>d.besar.length),  backgroundColor: C.greenA,  borderRadius:4 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins: { legend:{ labels:{ font:fontOpts, color:'#2C1810' } }, tooltip:{ mode:'index', intersect:false } },
+      scales: {
+        x: { stacked:true, ticks:{ font:fontOpts, color:'#6B3A2A', maxRotation:45 }, grid:{ color: C.muted } },
+        y: { stacked:true, ticks:{ font:fontOpts, color:'#6B3A2A', stepSize:1 },     grid:{ color: C.muted }, beginAtZero:true },
+      }
+    }
+  });
+
+  // ── LINE CHART: trend per bulan ──
+  _destroyChart('line');
+  const monthKeys   = Object.keys(byMonth).sort();
+  const monthLabels = monthKeys.map(m => new Date(m+'-01').toLocaleDateString('id-ID',{month:'short',year:'numeric'}));
+  _charts.line = new Chart(document.getElementById('chartLine'), {
+    type: 'line',
+    data: {
+      labels: monthLabels,
+      datasets: [
+        { label:'📊 Total',  data: monthKeys.map(m=>byMonth[m].kecil+byMonth[m].tengah+byMonth[m].besar), borderColor:'#555', backgroundColor:'rgba(80,80,80,0.06)', tension:0.4, fill:false, pointBackgroundColor:'#555', pointRadius:5, borderWidth:2.5, borderDash:[] },
+        { label:'🐣 Kecil',  data: monthKeys.map(m=>byMonth[m].kecil),  borderColor:C.maroon, backgroundColor:'rgba(123,17,32,0.08)', tension:0.4, fill:true, pointBackgroundColor:C.maroon, pointRadius:5 },
+        { label:'🌿 Tengah', data: monthKeys.map(m=>byMonth[m].tengah), borderColor:C.gold,   backgroundColor:'rgba(212,160,23,0.08)', tension:0.4, fill:true, pointBackgroundColor:C.gold,   pointRadius:5 },
+        { label:'⭐ Besar',  data: monthKeys.map(m=>byMonth[m].besar),  borderColor:C.green,  backgroundColor:'rgba(39,174,96,0.08)',  tension:0.4, fill:true, pointBackgroundColor:C.green,  pointRadius:5 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins: { legend:{ labels:{ font:fontOpts, color:'#2C1810' } }, tooltip:{ mode:'index', intersect:false } },
+      scales: {
+        x: { ticks:{ font:fontOpts, color:'#6B3A2A' }, grid:{ color:C.muted } },
+        y: { ticks:{ font:fontOpts, color:'#6B3A2A', stepSize:1 }, grid:{ color:C.muted }, beginAtZero:true },
+      }
+    }
+  });
+
+  // ── PIE/DONUT CHART: per kelas ──
+  _destroyChart('pie');
+  _charts.pie = new Chart(document.getElementById('chartPie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['🐣 Kecil','🌿 Tengah','⭐ Besar'],
+      datasets: [{
+        data: [byKelas.kecil.hadir, byKelas.tengah.hadir, byKelas.besar.hadir],
+        backgroundColor: [C.maroonA, C.goldA, C.greenA],
+        borderColor:     ['white','white','white'],
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      cutout: '58%',
+      plugins: {
+        legend:{ position:'bottom', labels:{ font:fontOpts, color:'#2C1810', padding:16 } },
+        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw} anak (${Math.round(ctx.raw/totalHadir*100)}%)` } }
+      }
+    }
+  });
 }
 
 function toggleDetail(key) {
@@ -654,13 +971,14 @@ function closeExportModal(e) {
 
 /* ---- Helper: get label bulan aktif ---- */
 function getExportMeta() {
-  const bulan = document.getElementById('rekap-bulan').value;
-  const sesi  = document.getElementById('rekap-sesi').value;
-  const namaBulan = bulan
-    ? new Date(bulan+'-01').toLocaleDateString('id-ID',{month:'long',year:'numeric'})
-    : 'Rekap';
+  const dari   = (document.getElementById('rekap-dari')   || {}).value || '';
+  const sampai = (document.getElementById('rekap-sampai') || {}).value || '';
+  const sesi   = document.getElementById('rekap-sesi').value;
+  const lblDari   = dari   ? new Date(dari+'-01').toLocaleDateString('id-ID',{month:'long',year:'numeric'})   : '';
+  const lblSampai = sampai ? new Date(sampai+'-01').toLocaleDateString('id-ID',{month:'long',year:'numeric'}) : '';
+  const namaBulan = dari === sampai || !sampai ? (lblDari || 'Rekap') : `${lblDari} – ${lblSampai}`;
   const sesiLabel = sesi ? `Sesi ${sesi}` : 'Semua Sesi';
-  const filename  = `absensi_bkc_${bulan||new Date().toISOString().split('T')[0]}`;
+  const filename  = `absensi_bkc_${dari||new Date().toISOString().split('T')[0]}${sampai&&sampai!==dari?'_sd_'+sampai:''}`;
   return { namaBulan, sesiLabel, filename };
 }
 
@@ -811,12 +1129,52 @@ function triggerDownload(url, filename) {
 /* ============================================================
    UI HELPERS
    ============================================================ */
+const _loadingEmojis = ['🐣','🌿','⭐','🙏','💛','🐣'];
+let _loadingEmojiIdx = 0;
+let _loadingEmojiTimer = null;
+const _loadingSubs = [
+  'Bentar ya, lagi ngambil daftar anak...',
+  'Konek ke Google Sheets...',
+  'Hampir selesai nih!',
+];
+
 function showLoading(msg='Memuat...') {
   document.getElementById('loadingMsg').textContent = msg;
   document.getElementById('loadingOverlay').classList.add('show');
+  // cycle emoji
+  _loadingEmojiIdx = 0;
+  const emojiEl = document.getElementById('loadingEmoji');
+  const subEl   = document.getElementById('loadingSub');
+  if (emojiEl) emojiEl.textContent = _loadingEmojis[0];
+  if (subEl)   subEl.textContent   = _loadingSubs[0];
+  _loadingEmojiTimer = setInterval(() => {
+    _loadingEmojiIdx = (_loadingEmojiIdx + 1) % _loadingEmojis.length;
+    if (emojiEl) {
+      emojiEl.style.animation = 'none';
+      emojiEl.textContent = _loadingEmojis[_loadingEmojiIdx];
+      void emojiEl.offsetWidth;
+      emojiEl.style.animation = '';
+    }
+    if (subEl) subEl.textContent = _loadingSubs[Math.min(_loadingEmojiIdx, _loadingSubs.length-1)];
+  }, 1200);
+  // show skeletons
+  ['kecil','tengah','besar'].forEach(k => {
+    const sk = document.getElementById(`skeleton-${k}`);
+    const li = document.getElementById(`list-${k}`);
+    if (sk) sk.style.display = 'block';
+    if (li) li.style.display = 'none';
+  });
 }
 function hideLoading() {
   document.getElementById('loadingOverlay').classList.remove('show');
+  clearInterval(_loadingEmojiTimer);
+  // hide skeletons, show lists
+  ['kecil','tengah','besar'].forEach(k => {
+    const sk = document.getElementById(`skeleton-${k}`);
+    const li = document.getElementById(`list-${k}`);
+    if (sk) sk.style.display = 'none';
+    if (li) li.style.display = '';
+  });
 }
 
 let toastTimer;
