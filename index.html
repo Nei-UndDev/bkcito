@@ -438,16 +438,18 @@
           </div>
         </div>
 
-        <!-- Panel: Siswa -->
+        <!-- ════════════════════════════════════
+             Panel: Siswa
+             ════════════════════════════════════ -->
         <div class="help-panel" id="help-siswa">
           <div class="help-section">
-            <p class="help-lead">Kelola daftar anak di tiap kelas.</p>
+            <p class="help-lead">Kelola daftar anak — tambah, edit, foto, hapus.</p>
 
             <div class="help-item">
               <div class="help-item-icon">➕</div>
               <div>
                 <div class="help-item-title">Tambah Anak Baru</div>
-                <div class="help-item-desc">Ketik nama di kolom "Nama anak baru..." lalu ketuk <strong>Tambah</strong> atau tekan Enter. Nama langsung tersimpan ke Google Sheets.</div>
+                <div class="help-item-desc">Ketik nama di kolom <em>"Nama anak baru..."</em> lalu tap <strong>Tambah</strong> atau tekan Enter. Nama langsung tersimpan ke Google Sheets.</div>
               </div>
             </div>
 
@@ -455,7 +457,15 @@
               <div class="help-item-icon">✎</div>
               <div>
                 <div class="help-item-title">Edit Nama / Pindah Kelas</div>
-                <div class="help-item-desc">Ketuk tombol <strong>✎</strong> di kartu anak untuk mengubah nama atau memindahkan ke kelas lain. Riwayat absensi lama tetap aman.</div>
+                <div class="help-item-desc">Tap tombol <strong>✎</strong> di kartu anak untuk ubah nama atau pindahkan ke kelas lain. Riwayat absensi di kelas lama tetap aman.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">📷</div>
+              <div>
+                <div class="help-item-title">Tambah Foto Wajah</div>
+                <div class="help-item-desc">Di modal Edit, scroll ke bagian <strong>Foto Anak</strong> → tap area 📷 → pilih dari kamera atau galeri. Foto otomatis di-resize &amp; diupload ke <strong>GitHub Repo</strong>, lalu muncul di avatar semua HP yang buka app. Tap <em>🗑 Hapus foto</em> untuk menghapusnya.</div>
               </div>
             </div>
 
@@ -463,7 +473,7 @@
               <div class="help-item-icon">✕</div>
               <div>
                 <div class="help-item-title">Hapus Anak</div>
-                <div class="help-item-desc">Ketuk tombol <strong>✕</strong> merah di kartu anak. Muncul konfirmasi sebelum data dihapus dari daftar.</div>
+                <div class="help-item-desc">Tap tombol <strong>✕</strong> di kartu anak. Muncul konfirmasi sebelum data dihapus. Foto di Drive ikut dihapus otomatis.</div>
               </div>
             </div>
 
@@ -474,78 +484,99 @@
           </div>
         </div>
 
-        <!-- Panel: Rekap -->
+<!-- ════════════════════════════════════
+             Panel: Rekap
+             ════════════════════════════════════ -->
         <div class="help-panel" id="help-rekap">
           <div class="help-section">
-            <p class="help-lead">Lihat laporan bulanan dan export data.</p>
+            <p class="help-lead">Laporan kehadiran lintas bulan lengkap dengan grafik.</p>
 
             <div class="help-step">
               <div class="help-step-num">1</div>
               <div>
-                <div class="help-step-title">Pilih Bulan & Sesi</div>
-                <div class="help-step-desc">Pilih bulan dari dropdown. Filter sesi bersifat opsional — kosongkan untuk lihat semua sesi.</div>
+                <div class="help-step-title">Pilih Range Bulan</div>
+                <div class="help-step-desc">Tentukan periode <strong>Dari</strong> dan <strong>Sampai</strong> — bisa satu bulan atau beberapa bulan sekaligus (maks 24 bulan ke belakang). Default otomatis 3 bulan terakhir.</div>
               </div>
             </div>
+
             <div class="help-step">
               <div class="help-step-num">2</div>
               <div>
-                <div class="help-step-title">Ketuk Tampilkan</div>
-                <div class="help-step-desc">Data kehadiran per kelas dan per tanggal akan dimuat dari Google Sheets.</div>
+                <div class="help-step-title">Filter Sesi (Opsional)</div>
+                <div class="help-step-desc">Pilih Sesi 1 / 2 / 3 untuk rekap sesi tertentu, atau biarkan <em>Semua Sesi</em> untuk rekap gabungan.</div>
               </div>
             </div>
+
             <div class="help-step">
               <div class="help-step-num">3</div>
               <div>
-                <div class="help-step-title">Lihat Detail Nama</div>
-                <div class="help-step-desc">Ketuk baris mana saja di tabel untuk melihat nama-nama anak yang hadir di sesi tersebut.</div>
+                <div class="help-step-title">Lihat Grafik Statistik</div>
+                <div class="help-step-desc">Setelah data dimuat, muncul grafik otomatis. Switch tampilan: <strong>Bar</strong> (perbandingan per bulan), <strong>Tren</strong> (garis termasuk total), <strong>Pie</strong> (proporsi per kelas).</div>
               </div>
             </div>
+
             <div class="help-step">
               <div class="help-step-num">4</div>
               <div>
-                <div class="help-step-title">Export Data</div>
-                <div class="help-step-desc">Ketuk <strong>Export</strong> untuk mengunduh data dalam format <strong>CSV</strong>, <strong>Excel (.xlsx)</strong>, atau <strong>PDF</strong> siap cetak.</div>
+                <div class="help-step-title">Tabel Detail &amp; Export</div>
+                <div class="help-step-desc">Tap baris di tabel untuk lihat nama anak yang hadir di sesi itu. Tap <strong>⬇ Export</strong> untuk unduh data sebagai <strong>CSV</strong>, <strong>Excel (.xlsx)</strong>, atau <strong>PDF</strong>.</div>
               </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">📊</span>
+              <span>Rekap hanya menampilkan anak yang <strong>Hadir</strong> — anak yang absen tidak dihitung.</span>
             </div>
           </div>
         </div>
 
-        <!-- Panel: Tips -->
+        <!-- ════════════════════════════════════
+             Panel: Tips
+             ════════════════════════════════════ -->
         <div class="help-panel" id="help-tips">
           <div class="help-section">
-            <p class="help-lead">Tips agar penggunaan makin lancar.</p>
+            <p class="help-lead">Tips biar makin sat set.</p>
 
             <div class="help-item">
               <div class="help-item-icon">📱</div>
               <div>
-                <div class="help-item-title">Simpan ke Home Screen</div>
-                <div class="help-item-desc">Di iPhone: Safari → tombol Share → "Add to Home Screen". Di Android: Chrome → menu ⋮ → "Add to Home Screen". Biar bisa dibuka kayak aplikasi!</div>
+                <div class="help-item-title">Pasang di Home Screen HP</div>
+                <div class="help-item-desc"><strong>iPhone:</strong> Safari → tombol Share → "Add to Home Screen". <strong>Android:</strong> Chrome → menu ⋮ → "Tambahkan ke layar utama". Bisa langsung dibuka kayak aplikasi, tanpa buka browser dulu!</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">📷</div>
+              <div>
+                <div class="help-item-title">Tips Foto Anak</div>
+                <div class="help-item-desc">Pakai foto wajah close-up supaya mudah dikenali di avatar kecil. Foto di-resize otomatis ke 300px — tidak perlu kompres dulu. Foto tersimpan di Google Drive dan sync ke semua HP.</div>
               </div>
             </div>
 
             <div class="help-item">
               <div class="help-item-icon">🌐</div>
               <div>
-                <div class="help-item-title">Butuh Internet</div>
-                <div class="help-item-desc">Koneksi internet diperlukan untuk memuat daftar anak dan menyimpan absensi ke Google Sheets.</div>
+                <div class="help-item-title">Perlu Koneksi Internet</div>
+                <div class="help-item-desc">Semua data disimpan ke Google Sheets &amp; Drive — koneksi internet wajib ada. Upload foto butuh koneksi lebih stabil karena ukuran datanya lebih besar.</div>
               </div>
             </div>
 
             <div class="help-item">
               <div class="help-item-icon">⚠️</div>
               <div>
-                <div class="help-item-title">Data Ditimpa?</div>
-                <div class="help-item-desc">Kalau simpan absensi di tanggal + sesi yang sama lebih dari sekali, data lama akan diganti. Konfirmasi selalu muncul jika ada nama yang bentrok.</div>
+                <div class="help-item-title">Absensi Ditimpa?</div>
+                <div class="help-item-desc">Kalau simpan absensi di tanggal + sesi + kelas yang sama lebih dari sekali, data lama diganti dengan yang baru. Kalau 0 hadir, muncul konfirmasi dulu sebelum simpan.</div>
               </div>
             </div>
 
             <div class="help-item">
               <div class="help-item-icon">🔄</div>
               <div>
-                <div class="help-item-title">Daftar Kosong / Error</div>
-                <div class="help-item-desc">Coba refresh halaman dan pastikan koneksi internet stabil. Kalau masih error, hubungi koordinator atau admin gereja.</div>
+                <div class="help-item-title">Daftar Kosong / Error?</div>
+                <div class="help-item-desc">Refresh halaman dan cek koneksi. Kalau foto gagal upload, coba lagi — ukuran file maks 5MB. Masih error? Hubungi koordinator atau admin gereja.</div>
               </div>
             </div>
+
           </div>
         </div>
 
