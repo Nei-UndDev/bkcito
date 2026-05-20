@@ -142,6 +142,19 @@
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
   font-family: var(--font-display);
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+.poin-avatar.has-foto {
+  background: var(--maroon-pale);
+  border-color: rgba(123,17,32,0.18);
+}
+.poin-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .poin-info {
@@ -207,6 +220,12 @@
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-display);
   flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+.poin-modal-avatar.has-foto {
+  background: var(--maroon-pale);
+  border-color: rgba(123,17,32,0.20);
 }
 
 .poin-modal-label {
@@ -269,10 +288,8 @@
   background: transparent;
   color: var(--text-muted);
 }
-.aktivitas-add-btn .aktivitas-icon { font-size: 1.2rem; color: var(--text-muted); }
+.aktivitas-add-btn .aktivitas-icon  { font-size: 1.2rem; color: var(--text-muted); }
 .aktivitas-add-btn .aktivitas-label { color: var(--text-muted); }
-
-
 
 /* ── Global leaderboard extras ────────────────────────────── */
 .poin-kelas-badge {
@@ -298,52 +315,43 @@
   background: rgba(123,17,32,0.06);
   box-shadow: 0 0 0 2.5px rgba(123,17,32,0.25);
 }
-.aktivitas-btn.selected .aktivitas-icon {
-  filter: none;
-}
-.aktivitas-btn.selected .aktivitas-poin {
-  background: var(--maroon);
-  color: white;
-  opacity: 1;
-}
-.aktivitas-btn.selected .aktivitas-label {
-  color: var(--maroon);
-  font-weight: 900;
-}
+.aktivitas-btn.selected .aktivitas-icon  { filter: none; }
+.aktivitas-btn.selected .aktivitas-poin  { background: var(--maroon); color: white; opacity: 1; }
+.aktivitas-btn.selected .aktivitas-label { color: var(--maroon); font-weight: 900; }
 
-/* Submit bar — muncul saat ada yang dipilih */
+/* ── Submit bar ───────────────────────────────────────────── */
 .poin-submit-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, rgba(123,17,32,0.06), rgba(123,17,32,0.03));
-  border: 1.5px solid rgba(123,17,32,0.18);
-  border-radius: var(--radius-xs);
-  padding: 10px 14px;
-  margin-top: 10px;
   gap: 12px;
+  background: linear-gradient(135deg, #FFF8E1, #FDF3D0);
+  border: 1.5px solid rgba(212,160,23,0.35);
+  border-radius: var(--radius-xs);
+  padding: 12px 14px;
+  margin-top: 12px;
   opacity: 0;
   transform: translateY(6px);
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s, transform 0.2s;
 }
 .poin-submit-bar.visible {
   opacity: 1;
   transform: translateY(0);
-  pointer-events: auto;
+  pointer-events: all;
 }
 .poin-submit-info {
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: var(--maroon);
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #5D4037;
 }
 .poin-submit-info span {
   font-weight: 900;
   font-size: 1rem;
 }
 .poin-submit-btn {
+  white-space: nowrap;
   min-height: 40px;
-  width: auto;
   padding: 8px 20px;
   font-size: 0.86rem;
   flex-shrink: 0;
@@ -389,40 +397,6 @@
   background: rgba(123,17,32,0.07);
   border-color: rgba(123,17,32,0.30);
   color: var(--maroon);
-}
-
-
-/* ── Submit bar ───────────────────────────────────────────── */
-.poin-submit-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: linear-gradient(135deg, #FFF8E1, #FDF3D0);
-  border: 1.5px solid rgba(212,160,23,0.35);
-  border-radius: var(--radius-xs);
-  padding: 12px 14px;
-  margin-top: 12px;
-  opacity: 0;
-  transform: translateY(6px);
-  pointer-events: none;
-  transition: opacity 0.2s, transform 0.2s;
-}
-.poin-submit-bar.visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: all;
-}
-.poin-submit-info {
-  font-size: 0.86rem;
-  font-weight: 800;
-  color: #5D4037;
-}
-.poin-submit-btn {
-  white-space: nowrap;
-  min-height: 40px;
-  padding: 8px 20px;
-  font-size: 0.86rem;
 }
 
 /* ── Tambah Aktivitas Modal ───────────────────────────────── */

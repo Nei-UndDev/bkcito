@@ -75,6 +75,11 @@
         <span class="tab-label">Besar</span>
         <span class="tab-sub">10+ thn</span>
       </button>
+      <button class="tab-btn" id="tab-kakak"  role="tab" aria-selected="false" onclick="switchTab('kakak')" >
+        <span class="tab-icon" aria-hidden="true">👑</span>
+        <span class="tab-label">Kakak</span>
+        <span class="tab-sub">Sekming</span>
+      </button>
       <button class="tab-btn" id="tab-rekap"  role="tab" aria-selected="false" onclick="switchTab('rekap')" >
         <span class="tab-icon" aria-hidden="true">📊</span>
         <span class="tab-label">Rekap</span>
@@ -82,12 +87,20 @@
       </button>
     </nav>
 
-    <!-- POIN SHORTCUT -->
-    <div class="poin-shortcut-bar">
+    <!-- SHORTCUTS -->
+    <div class="shortcut-bar-row">
       <a href="poin.html" class="poin-shortcut-btn">
         <span>🏅</span>
         <span>Lihat Papan Poin</span>
         <span class="poin-shortcut-arrow">›</span>
+      </a>
+      <a href="face.html" class="face-shortcut-btn">
+        <span class="fsc-icon">📷</span>
+        <div class="fsc-text">
+          <div class="fsc-label">Absensi Wajah</div>
+          <div class="fsc-sub">Scan otomatis via AI</div>
+        </div>
+        <span class="fsc-arrow">›</span>
       </a>
     </div>
 
@@ -294,6 +307,72 @@
         <div class="action-row">
           <button class="btn btn-ghost" onclick="selectAll('besar')">✅ Semua Hadir</button>
           <button class="btn btn-ghost" onclick="clearAll('besar')">✖ Reset Semua</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PANEL KAKAK ===== -->
+    <section class="panel" id="panel-kakak" role="tabpanel" aria-labelledby="tab-kakak">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge kakak-badge" aria-hidden="true">👑</div>
+          <div>
+            <h2>Kakak Sekming</h2>
+            <p>Kakak Sekolah Minggu</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date-kakak">📅 Tanggal Ibadah</label>
+            <input type="date" id="date-kakak" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label for="sesi-kakak">🕐 Sesi</label>
+            <select id="sesi-kakak" class="form-input">
+              <option value="1">Sesi 1</option>
+              <option value="2">Sesi 2</option>
+              <option value="3">Sesi 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="add-row">
+          <input type="text" id="newName-kakak" class="form-input"
+            placeholder="Nama kakak baru..."
+            autocomplete="off" autocorrect="off" autocapitalize="words"
+            onkeydown="if(event.key==='Enter') addStudent('kakak')" />
+          <button class="btn btn-add" onclick="addStudent('kakak')" aria-label="Tambah kakak">
+            ➕ Tambah
+          </button>
+        </div>
+
+        <div class="attendance-hint" id="hint-kakak"></div>
+        <div class="progress-wrap" id="progress-wrap-kakak" style="display:none">
+          <div class="progress-label">
+            <span>Kehadiran</span>
+            <strong id="progress-text-kakak">0 / 0</strong>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill-kakak" style="width:0%"></div>
+          </div>
+        </div>
+        <!-- Skeleton loader -->
+        <div class="skeleton-list" id="skeleton-kakak">
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w85"></div><div class="skeleton-line w50"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w60"></div><div class="skeleton-line w35"></div></div></div>
+        </div>
+        <div class="student-list" id="list-kakak" aria-label="Daftar kakak sekolah minggu"></div>
+        <div class="summary-bar" id="summary-kakak"></div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="submitAbsensi('kakak')">💾 Simpan Absensi</button>
+        </div>
+        <hr class="action-divider">
+        <div class="action-row">
+          <button class="btn btn-ghost" onclick="selectAll('kakak')">✅ Semua Hadir</button>
+          <button class="btn btn-ghost" onclick="clearAll('kakak')">✖ Reset Semua</button>
         </div>
       </div>
     </section>
@@ -627,6 +706,7 @@
             <option value="kecil">&#x1F423; Kelas Kecil (3&ndash;6 thn)</option>
             <option value="tengah">&#x1F33F; Kelas Tengah (7&ndash;9 thn)</option>
             <option value="besar">&#x2B50; Kelas Besar (10+ thn)</option>
+            <option value="kakak">&#x1F451; Kakak Sekming</option>
           </select>
         </div>
 

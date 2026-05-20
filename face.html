@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#4A0A13" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Absensi Wajah — Beloved Kids Cito</title>
+  <link rel="icon" type="image/x-icon" href="BK Cito.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="face.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</head>
+<body>
+
+  <div class="bg-bubbles" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+
+  <!-- ══ HEADER ══ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="face-back-btn" aria-label="Kembali">&#8592;</a>
+      <div class="header-text">
+        <div class="header-date">📷 Face Recognition</div>
+        <h1 class="header-title">Absensi Wajah</h1>
+        <p class="header-tagline">Scan otomatis · Konfirmasi guru · Simpan ke Sheets</p>
+      </div>
+      <div class="face-header-bot" aria-hidden="true">🤖</div>
+    </div>
+    <div class="header-ring" aria-hidden="true"></div>
+  </header>
+
+  <!-- ══ MAIN ══ -->
+  <main class="main-content">
+
+    <!-- 1. Setup -->
+    <div class="panel-card face-card">
+      <div class="face-sec-hdr">
+        <div class="face-sec-icon si-setup">⚙️</div>
+        <div>
+          <div class="face-sec-title">Info Ibadah</div>
+          <div class="face-sec-sub">Isi sebelum mulai scan</div>
+        </div>
+      </div>
+      <div class="face-setup-grid">
+        <div class="form-group">
+          <label for="inputDate">📅 Tanggal</label>
+          <input type="date" id="inputDate" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label for="inputSesi">🕐 Sesi</label>
+          <select id="inputSesi" class="form-input">
+            <option value="1">Sesi 1</option>
+            <option value="2">Sesi 2</option>
+            <option value="3">Sesi 3</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="inputKelas">🏫 Kelas</label>
+          <select id="inputKelas" class="form-input">
+            <option value="semua">Semua Kelas</option>
+            <option value="kecil">🐣 Kecil</option>
+            <option value="tengah">🌿 Tengah</option>
+            <option value="besar">⭐ Besar</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Status AI -->
+    <div class="face-model-status face-ms-loading" id="modelStatus">
+      <div class="face-ms-dot"></div>
+      <span id="modelStatusText">Memuat model AI… (10–30 detik pertama kali)</span>
+    </div>
+
+    <!-- 3. Kamera -->
+    <div class="panel-card face-card">
+      <div class="face-sec-hdr">
+        <div class="face-sec-icon si-cam">📷</div>
+        <div>
+          <div class="face-sec-title">Kamera</div>
+          <div class="face-sec-sub">Arahkan wajah ke oval, lalu tekan Scan</div>
+        </div>
+      </div>
+
+      <div class="face-cam-wrap" id="cameraWrap">
+        <video id="videoEl" autoplay playsinline muted></video>
+        <canvas id="canvasEl"></canvas>
+
+        <div class="face-guide" aria-hidden="true">
+          <div class="face-oval" id="faceOval"></div>
+        </div>
+
+        <div class="face-flash" id="scanFlash"></div>
+        <div class="face-cam-status" id="camStatus">Kamera belum aktif</div>
+
+        <div class="face-cam-placeholder" id="camPlaceholder">
+          <div class="face-cam-ph-icon">📷</div>
+          <p>Tekan tombol di bawah<br>untuk aktifkan kamera</p>
+        </div>
+
+        <div class="face-processing" id="processingOverlay">
+          <div class="face-proc-spinner"></div>
+          <div class="face-proc-text">Mencocokkan wajah…</div>
+        </div>
+      </div>
+
+      <div class="face-btn-pair">
+        <button class="btn btn-ghost" id="btnCamera" onclick="toggleCamera()">
+          🎥 Aktifkan Kamera
+        </button>
+        <button class="btn btn-gold" id="btnScan" onclick="doScan()" disabled>
+          🔍 Scan Wajah
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. Antrian -->
+    <div class="panel-card face-card">
+      <div class="face-sec-hdr">
+        <div class="face-sec-icon si-queue">⏳</div>
+        <div style="flex:1">
+          <div class="face-sec-title">
+            Menunggu Konfirmasi Guru
+            <span class="face-badge" id="queueCount">0</span>
+          </div>
+          <div class="face-sec-sub">Guru wajib konfirmasi setiap hasil scan</div>
+        </div>
+      </div>
+      <div class="face-queue-list" id="queueList">
+        <div class="face-empty">
+          <div class="face-empty-icon">🔍</div>
+          <p>Belum ada hasil scan</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Sudah Hadir -->
+    <div class="panel-card face-card">
+      <div class="face-sec-hdr">
+        <div class="face-sec-icon si-done">✅</div>
+        <div style="flex:1">
+          <div class="face-sec-title">
+            Sudah Hadir
+            <span class="face-badge face-badge-green" id="confirmedCount">0</span>
+          </div>
+          <div class="face-sec-sub">Absensi yang sudah dikonfirmasi guru</div>
+        </div>
+      </div>
+      <div id="confirmedList">
+        <div class="face-empty">
+          <div class="face-empty-icon">👼</div>
+          <p>Belum ada yang dikonfirmasi</p>
+        </div>
+      </div>
+      <div class="face-save-section" id="saveSection" style="display:none">
+        <p class="face-save-note">💾 Simpan semua absensi yang dikonfirmasi ke Google Sheets</p>
+        <button class="btn btn-primary" id="btnSave" onclick="saveAllAttendance()">
+          💾 Simpan Absensi ke Sheets
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ══ MODAL: MATCH ══ -->
+  <div class="modal-overlay" id="matchModal" role="dialog" aria-modal="true" aria-label="Konfirmasi kecocokan wajah">
+    <div class="face-sheet">
+      <div class="face-sheet-handle"></div>
+
+      <div class="face-match-preview">
+        <div class="face-match-imgs">
+          <div class="face-mfi-wrap">
+            <div class="face-mfi-lbl">📷 Hasil Scan</div>
+            <div class="face-mfi face-mfi-hl" id="mfiScan">
+              <canvas id="capturedCanvas" width="96" height="96"></canvas>
+            </div>
+          </div>
+          <div class="face-match-arrow">≈</div>
+          <div class="face-mfi-wrap">
+            <div class="face-mfi-lbl">📁 Foto Profil</div>
+            <div class="face-mfi" id="mfiProfil">?</div>
+          </div>
+        </div>
+        <div class="face-match-name" id="modalNama">—</div>
+        <div class="face-match-meta" id="modalMeta">—</div>
+        <span class="face-conf-badge" id="modalConf">—</span>
+      </div>
+
+      <hr class="face-divider" />
+
+      <div class="face-warn">
+        <span>⚠️</span>
+        <span>Pastikan foto scan dan foto profil adalah anak yang sama sebelum konfirmasi.</span>
+      </div>
+
+      <div class="face-modal-actions">
+        <button class="btn btn-primary" onclick="confirmMatch(true)">
+          ✅ Ya, Ini Benar — Tandai Hadir
+        </button>
+        <button class="btn btn-ghost" onclick="confirmMatch(false)">
+          ✕ Bukan Dia — Tolak
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: NO MATCH ══ -->
+  <div class="modal-overlay" id="noMatchModal" role="dialog" aria-modal="true" aria-label="Wajah tidak dikenali">
+    <div class="face-sheet">
+      <div class="face-sheet-handle"></div>
+      <div class="face-nomatch-icon">🤷</div>
+      <div class="face-nomatch-title">Wajah Tidak Dikenali</div>
+      <div class="face-nomatch-sub">
+        Sistem tidak menemukan kecocokan di data.<br>
+        Kemungkinan anak belum punya foto profil, atau pencahayaan terlalu berbeda.
+      </div>
+
+      <div class="face-nomatch-choices">
+        <button class="face-choice-btn" id="btnChoiceAddNew" onclick="openAddStudentModal()">
+          <div class="face-choice-icon">➕</div>
+          <div class="face-choice-body">
+            <div class="face-choice-label">Tambah Anak Baru</div>
+            <div class="face-choice-sub">Daftarkan anak yang belum ada di daftar</div>
+          </div>
+          <div class="face-choice-arrow">›</div>
+        </button>
+        <button class="face-choice-btn" id="btnChoiceAssignPhoto" onclick="openAssignPhotoModal()">
+          <div class="face-choice-icon">📸</div>
+          <div class="face-choice-body">
+            <div class="face-choice-label">Tambahkan Foto Profil</div>
+            <div class="face-choice-sub">Pilih anak yang sudah ada, upload foto wajahnya</div>
+          </div>
+          <div class="face-choice-arrow">›</div>
+        </button>
+      </div>
+
+      <button class="btn btn-ghost" style="margin-top:10px" onclick="closeNoMatchModal()">🔄 Coba Scan Lagi</button>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: TAMBAH ANAK BARU ══ -->
+  <div class="modal-overlay" id="addStudentModal" role="dialog" aria-modal="true" aria-label="Tambah anak baru">
+    <div class="face-sheet">
+      <div class="face-sheet-handle"></div>
+      <div class="face-modal-header">
+        <div class="face-modal-hd-icon">➕</div>
+        <div>
+          <div class="face-modal-hd-title">Tambah Anak Baru</div>
+          <div class="face-modal-hd-sub">Data akan langsung disimpan ke Google Sheets</div>
+        </div>
+      </div>
+
+      <div class="face-form-group">
+        <label for="addStuName">Nama Anak</label>
+        <input type="text" id="addStuName" class="form-input"
+               placeholder="Ketik nama lengkap…"
+               autocomplete="off" autocapitalize="words"
+               onkeydown="if(event.key==='Enter') submitAddStudent()" />
+      </div>
+
+      <div class="face-form-group">
+        <label for="addStuKelas">Kelas</label>
+        <select id="addStuKelas" class="form-input">
+          <option value="kecil">🐣 Kelas Kecil (3–6 thn)</option>
+          <option value="tengah">🌿 Kelas Tengah (7–9 thn)</option>
+          <option value="besar">⭐ Kelas Besar (10+ thn)</option>
+        </select>
+      </div>
+
+      <div class="face-modal-actions" style="margin-top:18px">
+        <button class="btn btn-primary" id="btnSubmitAddStudent" onclick="submitAddStudent()">
+          ➕ Tambah Anak
+        </button>
+        <button class="btn btn-ghost" onclick="closeAddStudentModal()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: ASSIGN FOTO KE ANAK YANG ADA ══ -->
+  <div class="modal-overlay" id="assignPhotoModal" role="dialog" aria-modal="true" aria-label="Pilih anak untuk foto">
+    <div class="face-sheet face-sheet-tall">
+      <div class="face-sheet-handle"></div>
+      <div class="face-modal-header">
+        <div class="face-modal-hd-icon">📸</div>
+        <div>
+          <div class="face-modal-hd-title">Pilih Anak</div>
+          <div class="face-modal-hd-sub">Cari anak lalu upload foto profil wajahnya</div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="face-search-wrap">
+        <span class="face-search-icon">🔍</span>
+        <input type="text" id="assignSearchInput" class="face-search-input"
+               placeholder="Cari nama anak…"
+               autocomplete="off" autocorrect="off"
+               oninput="filterAssignList(this.value)" />
+      </div>
+
+      <!-- Student list -->
+      <div class="face-assign-list" id="assignStudentList">
+        <!-- populated by JS -->
+      </div>
+
+      <button class="btn btn-ghost" style="margin-top:12px" onclick="closeAssignPhotoModal()">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Hidden file input for assign photo -->
+  <input type="file" id="assignFotoInput" accept="image/jpeg,image/png,image/webp"
+         style="display:none" onchange="handleAssignFotoUpload(event)" />
+
+  <script src="face.js"></script>
+</body>
+</html>

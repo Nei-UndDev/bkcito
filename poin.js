@@ -5,7 +5,6 @@
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4AIeYtaSwb4q-2zWoELwer5R81k7qDkfFjSg8Uzt1iQ9r7Xs6jGS5RGEJhreTAWizOg/exec';
 
 // ── Aktivitas default & nilainya ─────────────────────────────
-// Format: { id, label, icon, poin }
 const DEFAULT_AKTIVITAS = [
   { id: 'doa',       label: 'Mimpin Doa',  icon: '🙏', poin: 1 },
   { id: 'kesaksian', label: 'Kesaksian',   icon: '✝️', poin: 1 },
@@ -18,7 +17,7 @@ const state = {
   tengah: [],
   besar:  [],
   activeKelas: 'semua',
-  aktivitas: [],   // akan diisi dari sheet + default
+  aktivitas: [],
   modal: { id: null, nama: null, kelas: null, poin: 0, selected: [] },
 };
 
@@ -32,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
     }).toUpperCase();
   document.getElementById('yearBadge').textContent = `Tahun ${now.getFullYear()}`;
-
   loadAll();
 });
 
@@ -48,17 +46,17 @@ async function loadAll() {
 
     if (!siswData.ok) throw new Error(siswData.error || 'Gagal memuat siswa');
 
-    // Simpan base data siswa (nama, kelas, id) — poin akan dioverride sesuai filter
     state._baseSiswa = [];
     ['kecil', 'tengah', 'besar'].forEach(k => { state[k] = []; });
     (siswData.result || []).forEach(r => {
-      const nama  = (r[0] || '').trim();
-      const kelas = (r[1] || '').trim().toLowerCase();
-      const id    = (r[2] || '').trim();
-      const poin  = parseInt(r[3]) || 0;
+      const nama    = (r[0] || '').trim();
+      const kelas   = (r[1] || '').trim().toLowerCase();
+      const id      = (r[2] || '').trim();
+      const poin    = parseInt(r[3]) || 0;
+      const fotoUrl = (r[4] || '').trim() || null;
       if (nama && ['kecil', 'tengah', 'besar'].includes(kelas)) {
-        state[kelas].push({ id, nama, poin });
-        state._baseSiswa.push({ id, nama, kelas, poin });
+        state[kelas].push({ id, nama, poin, fotoUrl });
+        state._baseSiswa.push({ id, nama, kelas, poin, fotoUrl });
       }
     });
 
@@ -79,20 +77,17 @@ async function loadAll() {
   }
 }
 
-// Render panel sesuai kelas & filter aktif
 function renderCurrent() {
   if (state.activeKelas === 'semua') renderPanelSemua();
   else renderPanel(state.activeKelas);
 }
 
-// Hitung range tanggal dari mode filter
 function getFilterRange(mode) {
-  const now   = new Date();
-  const pad   = n => String(n).padStart(2, '0');
-  const fmt   = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
   if (mode === 'semua') return { dari: '', sampai: '' };
-
   if (mode === 'tahun') {
     return { dari: `${now.getFullYear()}-01-01`, sampai: `${now.getFullYear()}-12-31` };
   }
@@ -102,8 +97,8 @@ function getFilterRange(mode) {
     return { dari: `${y}-${pad(m+1)}-01`, sampai: fmt(last) };
   }
   if (mode === 'minggu') {
-    const day  = now.getDay(); // 0=Sun
-    const diff = day === 0 ? 6 : day - 1; // senin = start minggu
+    const day  = now.getDay();
+    const diff = day === 0 ? 6 : day - 1;
     const sen  = new Date(now); sen.setDate(now.getDate() - diff);
     const ming = new Date(sen); ming.setDate(sen.getDate() + 6);
     return { dari: fmt(sen), sampai: fmt(ming) };
@@ -112,21 +107,17 @@ function getFilterRange(mode) {
 }
 
 async function applyFilter(mode) {
-  // Update UI tombol
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`filter-${mode}`)?.classList.add('active');
-
   state.filter.mode = mode;
 
   if (mode === 'semua') {
-    // Restore poin total dari base data
     ['kecil','tengah','besar'].forEach(k => { state[k] = []; });
     state._baseSiswa.forEach(s => state[s.kelas].push({ ...s }));
     renderCurrent();
     return;
   }
 
-  // Fetch log sesuai range
   const { dari, sampai } = getFilterRange(mode);
   showLoading('Memfilter data...');
   try {
@@ -135,7 +126,6 @@ async function applyFilter(mode) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
 
-    // Aggregate poin dari log per ID
     const poinMap = {};
     (data.result || []).forEach(r => {
       const id    = r[1];
@@ -143,10 +133,9 @@ async function applyFilter(mode) {
       poinMap[id] = (poinMap[id] || 0) + delta;
     });
 
-    // Update state dengan poin dari periode ini
     ['kecil','tengah','besar'].forEach(k => { state[k] = []; });
     state._baseSiswa.forEach(s => {
-      state[s.kelas].push({ ...s, poin: poinMap[s.id] || 0 });
+      state[s.kelas].push({ ...s, poin: poinMap[s.id] || 0, fotoUrl: s.fotoUrl });
     });
 
     hideLoading();
@@ -197,16 +186,19 @@ function renderPanel(kelas) {
   const maxPoin = siswa[0].poin || 1;
 
   const cards = siswa.map((stu, i) => {
-    const rank = i + 1;
-    const pct  = maxPoin > 0 ? Math.round((stu.poin / maxPoin) * 100) : 0;
+    const rank      = i + 1;
+    const pct       = maxPoin > 0 ? Math.round((stu.poin / maxPoin) * 100) : 0;
     const rankBadge = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-    const initial = stu.nama.trim().charAt(0).toUpperCase();
+    const initial   = stu.nama.trim().charAt(0).toUpperCase();
+    const avatarHtml = stu.fotoUrl
+      ? `<img src="${driveProxyUrl(stu.fotoUrl)}" alt="" class="poin-avatar-img" onerror="this.parentElement.innerHTML='${initial}'"/>`
+      : initial;
     return `
-      <div class="poin-card" onclick="openPoinModal('${stu.id}', '${escapeAttr(stu.nama)}', '${kelas}', ${stu.poin})"
+      <div class="poin-card" onclick="openPoinModal('${stu.id}', '${escapeAttr(stu.nama)}', '${kelas}', ${stu.poin}, '${escapeAttr(stu.fotoUrl || '')}')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter')openPoinModal('${stu.id}', '${escapeAttr(stu.nama)}', '${kelas}', ${stu.poin})">
+           onkeydown="if(event.key==='Enter')openPoinModal('${stu.id}', '${escapeAttr(stu.nama)}', '${kelas}', ${stu.poin}, '${escapeAttr(stu.fotoUrl || '')}')">
         <div class="poin-rank">${rankBadge}</div>
-        <div class="poin-avatar">${initial}</div>
+        <div class="poin-avatar${stu.fotoUrl ? ' has-foto' : ''}">${avatarHtml}</div>
         <div class="poin-info">
           <div class="poin-nama">${escapeHtml(stu.nama)}</div>
           <div class="poin-bar-wrap">
@@ -256,7 +248,6 @@ function switchPoinHelp(panel, btn) {
    FILTER BAR
    ============================================================ */
 function renderFilter() {
-  // Inject filter bar ke DOM kalau belum ada
   if (document.getElementById('filterBar')) return;
   const bar = document.createElement('div');
   bar.id = 'filterBar';
@@ -268,9 +259,10 @@ function renderFilter() {
     <button class="filter-btn" id="filter-bulan"  onclick="applyFilter('bulan')">Bulan Ini</button>
     <button class="filter-btn" id="filter-minggu" onclick="applyFilter('minggu')">Minggu Ini</button>
   `;
-  // Sisipkan sebelum poin-panel
   const panel = document.getElementById('poin-panel');
   panel.parentNode.insertBefore(bar, panel);
+  // Init filter state
+  if (!state.filter) state.filter = { mode: 'semua' };
 }
 
 /* ============================================================
@@ -279,7 +271,6 @@ function renderFilter() {
 function renderPanelSemua() {
   const panel = document.getElementById('poin-panel');
 
-  // Gabung semua siswa dari semua kelas, tandai kelasnya
   const semua = [
     ...state.kecil.map(s  => ({ ...s, kelas: 'kecil'  })),
     ...state.tengah.map(s => ({ ...s, kelas: 'tengah' })),
@@ -312,12 +303,15 @@ function renderPanelSemua() {
     const rankBadge = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
     const ki        = kelasInfo[stu.kelas];
     const initial   = stu.nama.trim().charAt(0).toUpperCase();
+    const avatarHtml = stu.fotoUrl
+      ? `<img src="${driveProxyUrl(stu.fotoUrl)}" alt="" class="poin-avatar-img" onerror="this.parentElement.innerHTML='${initial}'"/>`
+      : initial;
     return `
-      <div class="poin-card poin-card-global" onclick="openPoinModal('${stu.id}','${escapeAttr(stu.nama)}','${stu.kelas}',${stu.poin})"
+      <div class="poin-card poin-card-global" onclick="openPoinModal('${stu.id}','${escapeAttr(stu.nama)}','${stu.kelas}',${stu.poin},'${escapeAttr(stu.fotoUrl || '')}')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter')openPoinModal('${stu.id}','${escapeAttr(stu.nama)}','${stu.kelas}',${stu.poin})">
+           onkeydown="if(event.key==='Enter')openPoinModal('${stu.id}','${escapeAttr(stu.nama)}','${stu.kelas}',${stu.poin},'${escapeAttr(stu.fotoUrl || '')}')">
         <div class="poin-rank">${rankBadge}</div>
-        <div class="poin-avatar">${initial}</div>
+        <div class="poin-avatar${stu.fotoUrl ? ' has-foto' : ''}">${avatarHtml}</div>
         <div class="poin-info">
           <div class="poin-nama">${escapeHtml(stu.nama)}</div>
           <div class="poin-kelas-badge" style="background:${ki.color}22;color:${ki.color};border-color:${ki.color}44">
@@ -351,11 +345,21 @@ function renderPanelSemua() {
 /* ============================================================
    MODAL POIN
    ============================================================ */
-function openPoinModal(id, nama, kelas, poin) {
+function openPoinModal(id, nama, kelas, poin, fotoUrl) {
   state.modal = { id, nama, kelas, poin, selected: [] };
-  document.getElementById('poinModal-avatar').textContent = nama.charAt(0).toUpperCase();
-  document.getElementById('poinModal-nama').textContent   = nama;
-  document.getElementById('poinModal-total').textContent  = poin;
+
+  const avatarEl = document.getElementById('poinModal-avatar');
+  const initial  = nama.charAt(0).toUpperCase();
+  if (fotoUrl) {
+    avatarEl.innerHTML = `<img src="${driveProxyUrl(fotoUrl)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='${initial}'"/>`;
+    avatarEl.classList.add('has-foto');
+  } else {
+    avatarEl.textContent = initial;
+    avatarEl.classList.remove('has-foto');
+  }
+
+  document.getElementById('poinModal-nama').textContent  = nama;
+  document.getElementById('poinModal-total').textContent = poin;
   renderAktivitasGrid();
   updateSubmitBar();
   document.getElementById('poinModal').classList.add('show');
@@ -421,7 +425,6 @@ async function simpanPoinDelta(id, nama, kelas, delta, label) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
 
-    // Update state lokal
     const stu  = state[kelas].find(s => s.id === id);
     const base = (state._baseSiswa || []).find(s => s.id === id);
     if (stu)  stu.poin  += delta;
@@ -439,23 +442,21 @@ async function simpanPoinDelta(id, nama, kelas, delta, label) {
    TAMBAH AKTIVITAS CUSTOM
    ============================================================ */
 function openAddAktivitas() {
-  // Tutup modal poin dulu, buka modal form
   document.getElementById('poinModal').classList.remove('show');
   document.getElementById('addAktModal').classList.add('show');
-  document.getElementById('newAktNama').value  = '';
-  document.getElementById('newAktIcon').value  = '🌟';
+  document.getElementById('newAktNama').value = '';
+  document.getElementById('newAktIcon').value = '🌟';
   setTimeout(() => document.getElementById('newAktNama').focus(), 100);
 }
 
 function closeAddAktModal() {
   document.getElementById('addAktModal').classList.remove('show');
-  // Buka kembali modal poin
   document.getElementById('poinModal').classList.add('show');
 }
 
 function pickIcon(emoji) {
   const inp = document.getElementById('newAktIcon');
-  inp.value = '';           // kosongkan dulu biar maxlength ga blokir
+  inp.value = '';
   inp.removeAttribute('maxlength');
   inp.value = emoji;
 }
@@ -469,7 +470,7 @@ function saveNewAktivitas() {
     return;
   }
   document.getElementById('addAktModal').classList.remove('show');
-  document.body.style.overflow = 'hidden'; // poin modal masih open
+  document.body.style.overflow = 'hidden';
   saveAktivitasCustom(nama, icon);
 }
 
@@ -484,7 +485,6 @@ async function saveAktivitasCustom(namaAkt, icon) {
     });
     hideLoading();
     showToast(`✅ Aktivitas "${namaAkt}" ditambahkan!`, 'success');
-    // Re-render grid di modal poin yang sudah terbuka
     renderAktivitasGrid();
   } catch (err) {
     hideLoading();
@@ -516,7 +516,6 @@ async function doResetPoin() {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
 
-    // Reset state lokal
     ['kecil', 'tengah', 'besar'].forEach(k => {
       state[k].forEach(s => { s.poin = 0; });
     });
@@ -530,7 +529,7 @@ async function doResetPoin() {
 }
 
 /* ============================================================
-   UTILS (sama seperti di app.js)
+   UTILS
    ============================================================ */
 const _poinLoadingEmojis = ['🏅','🌟','🏆','🙏','💛','🎉'];
 const _poinLoadingSubs = [
@@ -538,7 +537,7 @@ const _poinLoadingSubs = [
   'Konek ke Google Sheets...',
   'Hampir selesai nih!',
 ];
-let _poinEmojiIdx = 0;
+let _poinEmojiIdx   = 0;
 let _poinEmojiTimer = null;
 
 function showLoading(msg = 'Memuat...') {
@@ -560,10 +559,12 @@ function showLoading(msg = 'Memuat...') {
     if (subEl) subEl.textContent = _poinLoadingSubs[Math.min(_poinEmojiIdx, _poinLoadingSubs.length - 1)];
   }, 1200);
 }
+
 function hideLoading() {
   document.getElementById('loadingOverlay').classList.remove('show');
   clearInterval(_poinEmojiTimer);
 }
+
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -571,9 +572,26 @@ function showToast(msg, type = '') {
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.remove('show'), 3200);
 }
+
 function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
 function escapeAttr(str) {
   return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+/* Google Drive / GitHub thumbnail proxy */
+function driveProxyUrl(url) {
+  if (!url) return '';
+  // GitHub raw URLs — langsung bisa dipakai di <img src>
+  if (url.includes('raw.githubusercontent.com')) return url;
+  // Legacy Google Drive — konversi ke lh3 proxy
+  if (url.includes('drive.google.com')) {
+    const m1 = url.match(/[?&]id=([^&]+)/);
+    if (m1) return `https://lh3.googleusercontent.com/d/${m1[1]}=s80`;
+    const m2 = url.match(/\/d\/([^/?&#]+)/);
+    if (m2) return `https://lh3.googleusercontent.com/d/${m2[1]}=s80`;
+  }
+  return url;
 }

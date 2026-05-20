@@ -10,6 +10,7 @@ const state = {
   kecil:     { students: [], attendance: {} },
   tengah:    { students: [], attendance: {} },
   besar:     { students: [], attendance: {} },
+  kakak:     { students: [], attendance: {} },
   rekapData: [],
 };
 
@@ -57,12 +58,10 @@ function closeConfirmModal() {
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  ['kecil','tengah','besar'].forEach(k => localStorage.removeItem(`siswa-${k}`));
+  ['kecil','tengah','besar','kakak'].forEach(k => localStorage.removeItem(`siswa-${k}`));
 
   const today = new Date().toISOString().split('T')[0];
-  ['kecil','tengah','besar'].forEach(k => {
-    document.getElementById(`date-${k}`).value = today;
-  });
+  ['kecil','tengah','besar','kakak'].forEach(k => { document.getElementById(`date-${k}`).value = today; });
 
   document.getElementById('headerDate').textContent =
     new Date().toLocaleDateString('id-ID', {
@@ -115,11 +114,11 @@ function _getRekapBulan() {
    TABS
    ============================================================ */
 function switchTab(tab) {
-  ['kecil','tengah','besar','rekap'].forEach(t => {
-    document.getElementById(`panel-${t}`).classList.remove('active');
+  ['kecil','tengah','besar','kakak','rekap'].forEach(t => {
+    const panel = document.getElementById(`panel-${t}`);
+    if (panel) panel.classList.remove('active');
     const btn = document.getElementById(`tab-${t}`);
-    btn.classList.remove('active');
-    btn.setAttribute('aria-selected','false');
+    if (btn) { btn.classList.remove('active'); btn.setAttribute('aria-selected','false'); }
   });
   document.getElementById(`panel-${tab}`).classList.add('active');
   const activeBtn = document.getElementById(`tab-${tab}`);
@@ -141,21 +140,21 @@ async function loadSiswa() {
 
     if (!data.ok) throw new Error(data.error || 'Gagal memuat data');
 
-    ['kecil','tengah','besar'].forEach(k => { state[k].students = []; });
+    ['kecil','tengah','besar','kakak'].forEach(k => { state[k].students = []; });
 
     (data.result || []).forEach(row => {
       const nama  = (row[0]||'').trim();
       const kelas = (row[1]||'').trim().toLowerCase();
       const id    = (row[2]||'').trim();
-      if (nama && ['kecil','tengah','besar'].includes(kelas)) {
+      if (nama && ['kecil','tengah','besar','kakak'].includes(kelas)) {
         const fotoUrl = (row[3]||'').trim() || null;   // kolom ke-4 di sheet Siswa
         state[kelas].students.push({ id, nama, fotoUrl });
       }
     });
 
-    ['kecil','tengah','besar'].forEach(renderStudents);
+    ['kecil','tengah','besar','kakak'].forEach(renderStudents);
 
-    const hasStudents = ['kecil','tengah','besar'].some(k => state[k].students.length > 0);
+    const hasStudents = ['kecil','tengah','besar','kakak'].some(k => state[k].students.length > 0);
     if (hasStudents) document.getElementById('hint-bar').classList.add('visible');
 
     hideLoading();
@@ -163,7 +162,7 @@ async function loadSiswa() {
     hideLoading();
     console.error('[loadSiswa]', err.message);
     showToast(`❌ ${err.message}`, 'error');
-    ['kecil','tengah','besar'].forEach(renderStudents);
+    ['kecil','tengah','besar','kakak'].forEach(renderStudents);
   }
 }
 
@@ -200,7 +199,7 @@ function renderStudents(kelas) {
     listEl.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">👼</div>
-        <p>Belum ada anak.<br>Tambah nama di atas atau<br>isi langsung di sheet <strong>Siswa</strong>.</p>
+        <p>Belum ada data.<br>Tambah nama di atas atau<br>isi langsung di sheet <strong>Siswa</strong>.</p>
       </div>`;
     updateSummary(kelas);
     return;
@@ -602,7 +601,7 @@ async function _uploadFotoDrive(stuId, dataUrl, kelas) {
 
 /* ---- Update fotoUrl di state & re-render ---- */
 function _updateFotoState(stuId, fotoUrl) {
-  ['kecil','tengah','besar'].forEach(k => {
+  ['kecil','tengah','besar','kakak'].forEach(k => {
     const stu = state[k].students.find(s => s.id === stuId);
     if (stu) {
       stu.fotoUrl = fotoUrl;
@@ -794,7 +793,7 @@ function renderRekap(rows, dari, sampai, sesi) {
     return;
   }
 
-  const byKelas = { kecil: { hadir: 0 }, tengah: { hadir: 0 }, besar: { hadir: 0 } };
+  const byKelas = { kecil: { hadir: 0 }, tengah: { hadir: 0 }, besar: { hadir: 0 }, kakak: { hadir: 0 } };
   const byDate  = {};
   const byMonth = {};
 
@@ -807,21 +806,21 @@ function renderRekap(rows, dari, sampai, sesi) {
 
     // per date
     const key = `${tgl}||${sesiR}`;
-    if (!byDate[key]) byDate[key] = { tgl, sesi: sesiR, kecil:[], tengah:[], besar:[] };
+    if (!byDate[key]) byDate[key] = { tgl, sesi: sesiR, kecil:[], tengah:[], besar:[], kakak:[] };
     if (byDate[key][kelas] !== undefined) byDate[key][kelas].push(nama);
 
     // per month (for line chart)
     const month = tgl.slice(0,7);
-    if (!byMonth[month]) byMonth[month] = { kecil:0, tengah:0, besar:0 };
+    if (!byMonth[month]) byMonth[month] = { kecil:0, tengah:0, besar:0, kakak:0 };
     if (byMonth[month][kelas] !== undefined) byMonth[month][kelas]++;
   });
 
-  const totalHadir  = byKelas.kecil.hadir + byKelas.tengah.hadir + byKelas.besar.hadir;
+  const totalHadir  = byKelas.kecil.hadir + byKelas.tengah.hadir + byKelas.besar.hadir + byKelas.kakak.hadir;
   const sortedDates = Object.values(byDate).sort((a,b) => a.tgl.localeCompare(b.tgl) || a.sesi.localeCompare(b.sesi));
 
   // ── Table HTML ──
   const tableRows = sortedDates.map((d, i) => {
-    const total  = d.kecil.length + d.tengah.length + d.besar.length;
+    const total  = d.kecil.length + d.tengah.length + d.besar.length + d.kakak.length;
     const key    = `detail-${i}`;
     const tglFmt = new Date(d.tgl).toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
     const pills  = (arr, icon) => arr.length
@@ -832,12 +831,12 @@ function renderRekap(rows, dari, sampai, sesi) {
           onkeydown="if(event.key==='Enter')toggleDetail('${key}')">
         <td>${tglFmt}</td>
         <td><span class="sesi-badge">${d.sesi}</span></td>
-        <td>${d.kecil.length}</td><td>${d.tengah.length}</td><td>${d.besar.length}</td>
+        <td>${d.kecil.length}</td><td>${d.tengah.length}</td><td>${d.besar.length}</td><td>${d.kakak.length}</td>
         <td><strong>${total}</strong> <span class="expand-icon" id="icon-${key}">›</span></td>
       </tr>
       <tr class="detail-row" id="${key}">
-        <td colspan="6"><div class="detail-panel">
-          ${pills(d.kecil,'🐣 Kecil')}${pills(d.tengah,'🌿 Tengah')}${pills(d.besar,'⭐ Besar')}
+        <td colspan="7"><div class="detail-panel">
+          ${pills(d.kecil,'🐣 Kecil')}${pills(d.tengah,'🌿 Tengah')}${pills(d.besar,'⭐ Besar')}${pills(d.kakak,'👑 Kakak')}
         </div></td>
       </tr>`;
   }).join('');
@@ -850,12 +849,13 @@ function renderRekap(rows, dari, sampai, sesi) {
       <div class="stat-card"><div class="num">${byKelas.kecil.hadir}</div><div class="lbl">🐣 Kecil</div></div>
       <div class="stat-card"><div class="num">${byKelas.tengah.hadir}</div><div class="lbl">🌿 Tengah</div></div>
       <div class="stat-card"><div class="num">${byKelas.besar.hadir}</div><div class="lbl">⭐ Besar</div></div>
+      <div class="stat-card"><div class="num">${byKelas.kakak.hadir}</div><div class="lbl">👑 Kakak</div></div>
     </div>
     <p class="rekap-section-title">📆 Per Tanggal & Sesi</p>
     <p class="rekap-tap-hint">👆 Ketuk baris untuk lihat nama lengkap</p>
     <div class="rekap-table-wrap">
       <table class="rekap-table">
-        <thead><tr><th>Tanggal</th><th>Sesi</th><th>🐣</th><th>🌿</th><th>⭐</th><th>Total</th></tr></thead>
+        <thead><tr><th>Tanggal</th><th>Sesi</th><th>🐣</th><th>🌿</th><th>⭐</th><th>👑</th><th>Total</th></tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
     </div>`;
@@ -868,6 +868,7 @@ function renderRekap(rows, dari, sampai, sesi) {
     maroon:  '#7B1120', maroonA: 'rgba(123,17,32,0.75)',
     gold:    '#D4A017', goldA:   'rgba(212,160,23,0.75)',
     green:   '#27AE60', greenA:  'rgba(39,174,96,0.75)',
+    purple:  '#8E44AD', purpleA: 'rgba(142,68,173,0.75)',
     muted:   'rgba(123,17,32,0.08)',
   };
   const fontOpts = { family: "'Nunito', sans-serif", size: 11, weight: '700' };
@@ -883,9 +884,10 @@ function renderRekap(rows, dari, sampai, sesi) {
     data: {
       labels: barLabels,
       datasets: [
-        { label:'🐣 Kecil',  data: sortedDates.map(d=>d.kecil.length),  backgroundColor: C.maroonA, borderRadius:4 },
-        { label:'🌿 Tengah', data: sortedDates.map(d=>d.tengah.length), backgroundColor: C.goldA,   borderRadius:4 },
-        { label:'⭐ Besar',  data: sortedDates.map(d=>d.besar.length),  backgroundColor: C.greenA,  borderRadius:4 },
+        { label:'🐣 Kecil',  data: sortedDates.map(d=>d.kecil.length),  backgroundColor: C.maroonA,  borderRadius:4 },
+        { label:'🌿 Tengah', data: sortedDates.map(d=>d.tengah.length), backgroundColor: C.goldA,    borderRadius:4 },
+        { label:'⭐ Besar',  data: sortedDates.map(d=>d.besar.length),  backgroundColor: C.greenA,   borderRadius:4 },
+        { label:'👑 Kakak',  data: sortedDates.map(d=>d.kakak.length),  backgroundColor: C.purpleA,  borderRadius:4 },
       ]
     },
     options: {
@@ -907,10 +909,11 @@ function renderRekap(rows, dari, sampai, sesi) {
     data: {
       labels: monthLabels,
       datasets: [
-        { label:'📊 Total',  data: monthKeys.map(m=>byMonth[m].kecil+byMonth[m].tengah+byMonth[m].besar), borderColor:'#555', backgroundColor:'rgba(80,80,80,0.06)', tension:0.4, fill:false, pointBackgroundColor:'#555', pointRadius:5, borderWidth:2.5, borderDash:[] },
-        { label:'🐣 Kecil',  data: monthKeys.map(m=>byMonth[m].kecil),  borderColor:C.maroon, backgroundColor:'rgba(123,17,32,0.08)', tension:0.4, fill:true, pointBackgroundColor:C.maroon, pointRadius:5 },
-        { label:'🌿 Tengah', data: monthKeys.map(m=>byMonth[m].tengah), borderColor:C.gold,   backgroundColor:'rgba(212,160,23,0.08)', tension:0.4, fill:true, pointBackgroundColor:C.gold,   pointRadius:5 },
-        { label:'⭐ Besar',  data: monthKeys.map(m=>byMonth[m].besar),  borderColor:C.green,  backgroundColor:'rgba(39,174,96,0.08)',  tension:0.4, fill:true, pointBackgroundColor:C.green,  pointRadius:5 },
+        { label:'📊 Total',  data: monthKeys.map(m=>byMonth[m].kecil+byMonth[m].tengah+byMonth[m].besar+byMonth[m].kakak), borderColor:'#555', backgroundColor:'rgba(80,80,80,0.06)', tension:0.4, fill:false, pointBackgroundColor:'#555', pointRadius:5, borderWidth:2.5, borderDash:[] },
+        { label:'🐣 Kecil',  data: monthKeys.map(m=>byMonth[m].kecil),  borderColor:C.maroon,  backgroundColor:'rgba(123,17,32,0.08)',  tension:0.4, fill:true, pointBackgroundColor:C.maroon,  pointRadius:5 },
+        { label:'🌿 Tengah', data: monthKeys.map(m=>byMonth[m].tengah), borderColor:C.gold,    backgroundColor:'rgba(212,160,23,0.08)', tension:0.4, fill:true, pointBackgroundColor:C.gold,    pointRadius:5 },
+        { label:'⭐ Besar',  data: monthKeys.map(m=>byMonth[m].besar),  borderColor:C.green,   backgroundColor:'rgba(39,174,96,0.08)',  tension:0.4, fill:true, pointBackgroundColor:C.green,   pointRadius:5 },
+        { label:'👑 Kakak',  data: monthKeys.map(m=>byMonth[m].kakak),  borderColor:C.purple,  backgroundColor:'rgba(142,68,173,0.08)', tension:0.4, fill:true, pointBackgroundColor:C.purple,  pointRadius:5 },
       ]
     },
     options: {
@@ -928,11 +931,11 @@ function renderRekap(rows, dari, sampai, sesi) {
   _charts.pie = new Chart(document.getElementById('chartPie'), {
     type: 'doughnut',
     data: {
-      labels: ['🐣 Kecil','🌿 Tengah','⭐ Besar'],
+      labels: ['🐣 Kecil','🌿 Tengah','⭐ Besar','👑 Kakak'],
       datasets: [{
-        data: [byKelas.kecil.hadir, byKelas.tengah.hadir, byKelas.besar.hadir],
-        backgroundColor: [C.maroonA, C.goldA, C.greenA],
-        borderColor:     ['white','white','white'],
+        data: [byKelas.kecil.hadir, byKelas.tengah.hadir, byKelas.besar.hadir, byKelas.kakak.hadir],
+        backgroundColor: [C.maroonA, C.goldA, C.greenA, C.purpleA],
+        borderColor:     ['white','white','white','white'],
         borderWidth: 3,
         hoverOffset: 8,
       }]
@@ -1021,15 +1024,15 @@ function exportExcel() {
   state.rekapData.forEach(r => {
     const tgl=r[0],sesiR=r[1],kelas=(r[2]||'').toLowerCase();
     const key=`${tgl}||${sesiR}`;
-    if (!byDate[key]) byDate[key]={tgl,sesi:sesiR,kecil:0,tengah:0,besar:0};
+    if (!byDate[key]) byDate[key]={tgl,sesi:sesiR,kecil:0,tengah:0,besar:0,kakak:0};
     if (byDate[key][kelas]!==undefined) byDate[key][kelas]++;
   });
-  const summaryHeaders = ['Tanggal','Sesi','Kelas Kecil','Kelas Tengah','Kelas Besar','Total'];
+  const summaryHeaders = ['Tanggal','Sesi','Kelas Kecil','Kelas Tengah','Kelas Besar','Kakak Sekming','Total'];
   const summaryRows = Object.values(byDate)
     .sort((a,b)=>a.tgl.localeCompare(b.tgl))
-    .map(d=>[d.tgl,d.sesi,d.kecil,d.tengah,d.besar,d.kecil+d.tengah+d.besar]);
+    .map(d=>[d.tgl,d.sesi,d.kecil,d.tengah,d.besar,d.kakak,d.kecil+d.tengah+d.besar+d.kakak]);
   const wsSum   = XLSX.utils.aoa_to_sheet([summaryHeaders,...summaryRows]);
-  wsSum['!cols'] = [14,10,14,14,14,10].map(w=>({wch:w}));
+  wsSum['!cols'] = [14,10,14,14,14,14,10].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, wsSum, 'Ringkasan');
 
   XLSX.writeFile(wb, filename+'.xlsx');
@@ -1043,26 +1046,26 @@ function exportPDF() {
   closeExportModal();
   const { namaBulan, sesiLabel } = getExportMeta();
 
-  const byKelas={kecil:{hadir:0},tengah:{hadir:0},besar:{hadir:0}};
+  const byKelas={kecil:{hadir:0},tengah:{hadir:0},besar:{hadir:0},kakak:{hadir:0}};
   const byDate={};
   // Setiap baris = 1 siswa hadir, tidak ada kolom Status
   state.rekapData.forEach(r=>{
     const tgl=r[0],sesiR=r[1]||'',kelas=(r[2]||'').toLowerCase();
     if(byKelas[kelas]) byKelas[kelas].hadir++;
     const key=`${tgl}||${sesiR}`;
-    if(!byDate[key])byDate[key]={tgl,sesi:sesiR,kecil:0,tengah:0,besar:0};
+    if(!byDate[key])byDate[key]={tgl,sesi:sesiR,kecil:0,tengah:0,besar:0,kakak:0};
     if(byDate[key][kelas]!==undefined)byDate[key][kelas]++;
   });
 
-  const totalHadir=byKelas.kecil.hadir+byKelas.tengah.hadir+byKelas.besar.hadir;
+  const totalHadir=byKelas.kecil.hadir+byKelas.tengah.hadir+byKelas.besar.hadir+byKelas.kakak.hadir;
   const totalAll=totalHadir;
 
   const tableRows=Object.values(byDate)
     .sort((a,b)=>a.tgl.localeCompare(b.tgl)||a.sesi.localeCompare(b.sesi))
     .map(d=>`<tr>
       <td>${new Date(d.tgl).toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</td>
-      <td>${d.sesi}</td><td>${d.kecil}</td><td>${d.tengah}</td><td>${d.besar}</td>
-      <td><strong>${d.kecil+d.tengah+d.besar}</strong></td>
+      <td>${d.sesi}</td><td>${d.kecil}</td><td>${d.tengah}</td><td>${d.besar}</td><td>${d.kakak}</td>
+      <td><strong>${d.kecil+d.tengah+d.besar+d.kakak}</strong></td>
     </tr>`).join('');
 
   const printHTML=`<!DOCTYPE html>
@@ -1102,11 +1105,12 @@ function exportPDF() {
   <div class="stat-box"><div class="stat-num">${byKelas.kecil.hadir}</div><div class="stat-lbl">🐣 Kelas Kecil</div></div>
   <div class="stat-box"><div class="stat-num">${byKelas.tengah.hadir}</div><div class="stat-lbl">🌿 Kelas Tengah</div></div>
   <div class="stat-box"><div class="stat-num">${byKelas.besar.hadir}</div><div class="stat-lbl">⭐ Kelas Besar</div></div>
+  <div class="stat-box"><div class="stat-num">${byKelas.kakak.hadir}</div><div class="stat-lbl">👑 Kakak Sekming</div></div>
   <div class="stat-box"><div class="stat-num">${totalHadir}</div><div class="stat-lbl">📊 Total Hadir</div></div>
 </div>
 <h3>Detail Per Tanggal & Sesi</h3>
 <table>
-  <thead><tr><th>Tanggal</th><th>Sesi</th><th>🐣 Kecil</th><th>🌿 Tengah</th><th>⭐ Besar</th><th>Total</th></tr></thead>
+  <thead><tr><th>Tanggal</th><th>Sesi</th><th>🐣 Kecil</th><th>🌿 Tengah</th><th>⭐ Besar</th><th>👑 Kakak</th><th>Total</th></tr></thead>
   <tbody>${tableRows}</tbody>
 </table>
 <div class="footer">Beloved Kids Cito · Melayani dengan Kasih ♥</div>
@@ -1158,7 +1162,7 @@ function showLoading(msg='Memuat...') {
     if (subEl) subEl.textContent = _loadingSubs[Math.min(_loadingEmojiIdx, _loadingSubs.length-1)];
   }, 1200);
   // show skeletons
-  ['kecil','tengah','besar'].forEach(k => {
+  ['kecil','tengah','besar','kakak'].forEach(k => {
     const sk = document.getElementById(`skeleton-${k}`);
     const li = document.getElementById(`list-${k}`);
     if (sk) sk.style.display = 'block';
@@ -1169,7 +1173,7 @@ function hideLoading() {
   document.getElementById('loadingOverlay').classList.remove('show');
   clearInterval(_loadingEmojiTimer);
   // hide skeletons, show lists
-  ['kecil','tengah','besar'].forEach(k => {
+  ['kecil','tengah','besar','kakak'].forEach(k => {
     const sk = document.getElementById(`skeleton-${k}`);
     const li = document.getElementById(`list-${k}`);
     if (sk) sk.style.display = 'none';

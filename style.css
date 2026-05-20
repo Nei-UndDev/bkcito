@@ -289,7 +289,7 @@ body {
    TABS — big, clear, friendly
    ============================================================ */
 .tab-nav {
-  display:grid;grid-template-columns:repeat(4,1fr);
+  display:grid;grid-template-columns:repeat(5,1fr);
   gap:8px;margin-bottom:18px;
 }
 
@@ -365,6 +365,7 @@ body {
 .kecil-badge {background:linear-gradient(135deg,#FFE8D0,#FFD0A8)}
 .tengah-badge{background:linear-gradient(135deg,#D5F5E3,#A9DFC0)}
 .besar-badge {background:linear-gradient(135deg,#D4E8FC,#AACCEE)}
+.kakak-badge {background:linear-gradient(135deg,#E8D0F8,#D4A8F0)}
 .rekap-badge {background:linear-gradient(135deg,#EAD8F8,#D4B8F0)}
 
 .panel-header h2{
@@ -667,7 +668,7 @@ select.form-input {
 }
 
 .stat-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);
+  display:grid;grid-template-columns:repeat(4,1fr);
   gap:10px;margin-bottom:22px;
 }
 .stat-card{
@@ -1414,6 +1415,7 @@ select.form-input {
   font-size: 0.88rem;
   transition: all 0.18s;
   touch-action: manipulation;
+  flex: 1;
 }
 .poin-shortcut-btn:hover {
   background: linear-gradient(135deg, #FFF3CD, #FDE8A0);
@@ -1428,6 +1430,47 @@ select.form-input {
   font-size: 1.1rem;
   color: var(--gold);
   font-weight: 900;
+}
+
+/* ── FACE SHORTCUT BUTTON (dari index ke face.html) ── */
+.face-shortcut-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #FAE8EB, #F5D0D8);
+  border: 1.5px solid rgba(123, 17, 32, 0.22);
+  border-radius: var(--radius-xs);
+  padding: 13px 16px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 800;
+  font-size: 0.88rem;
+  transition: all 0.18s;
+  touch-action: manipulation;
+  flex: 1;
+}
+.face-shortcut-btn:hover {
+  background: linear-gradient(135deg, #F5D8DD, #EDB8C3);
+  border-color: rgba(123, 17, 32, 0.40);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(123, 17, 32, 0.15);
+}
+.face-shortcut-btn:active { transform: scale(0.97); }
+.face-shortcut-btn .fsc-icon  { font-size: 1.3rem; flex-shrink: 0; }
+.face-shortcut-btn .fsc-text  { flex: 1; }
+.face-shortcut-btn .fsc-label { font-size: 0.88rem; font-weight: 900; color: var(--maroon-deep); }
+.face-shortcut-btn .fsc-sub   { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+.face-shortcut-btn .fsc-arrow { font-size: 1.1rem; color: var(--maroon); font-weight: 900; flex-shrink: 0; }
+
+/* ── SHORTCUT ROW (poin + face berdampingan) ── */
+.shortcut-bar-row {
+  display: flex;
+  gap: 10px;
+  max-width: 740px;
+  margin: 0 auto 10px;
+}
+@media (max-width: 420px) {
+  .shortcut-bar-row { flex-direction: column; }
 }
 /* ============================================================
    FOTO AVATAR — student list
