@@ -18,6 +18,7 @@ const state = {
   besar:  [],
   activeKelas: 'semua',
   aktivitas: [],
+  searchQuery: '',
   modal: { id: null, nama: null, kelas: null, poin: 0, selected: [] },
 };
 
@@ -75,6 +76,34 @@ async function loadAll() {
     hideLoading();
     showToast('❌ ' + err.message, 'error');
   }
+}
+
+/* ============================================================
+   LIVE SEARCH
+   ============================================================ */
+function applySearch(q) {
+  state.searchQuery = q.trim().toLowerCase();
+  const clearBtn = document.getElementById('poinSearchClear');
+  if (clearBtn) clearBtn.classList.toggle('hidden', !state.searchQuery);
+  renderCurrent();
+}
+
+function clearSearch() {
+  state.searchQuery = '';
+  const input    = document.getElementById('poinSearchInput');
+  const clearBtn = document.getElementById('poinSearchClear');
+  if (input)    input.value = '';
+  if (clearBtn) clearBtn.classList.add('hidden');
+  renderCurrent();
+  if (input) input.focus();
+}
+
+/* Filter siswa berdasarkan query — dipanggil setiap render */
+function filterBySearch(list) {
+  if (!state.searchQuery) return list;
+  return list.filter(s =>
+    s.nama.toLowerCase().includes(state.searchQuery)
+  );
 }
 
 function renderCurrent() {
@@ -155,7 +184,8 @@ function switchPoinTab(kelas) {
   });
   document.getElementById(`ptab-${kelas}`).classList.add('active');
   state.activeKelas = kelas;
-  renderCurrent();
+  // Reset search saat pindah tab supaya tidak bingung
+  clearSearch();
 }
 
 /* ============================================================
@@ -163,11 +193,12 @@ function switchPoinTab(kelas) {
    ============================================================ */
 function renderPanel(kelas) {
   const panel = document.getElementById('poin-panel');
-  const siswa = [...state[kelas]].sort((a, b) => b.poin - a.poin);
+  const semua = [...state[kelas]].sort((a, b) => b.poin - a.poin);
+  const siswa = filterBySearch(semua);
   const kelasLabel = { kecil: 'Kelas Kecil', tengah: 'Kelas Tengah', besar: 'Kelas Besar' }[kelas];
   const kelasIcon  = { kecil: '🐣', tengah: '🌿', besar: '⭐' }[kelas];
 
-  if (!siswa.length) {
+  if (!semua.length) {
     panel.innerHTML = `
       <div class="panel-card">
         <div class="poin-panel-header">
@@ -183,13 +214,30 @@ function renderPanel(kelas) {
     return;
   }
 
-  const maxPoin = siswa[0].poin || 1;
+  if (!siswa.length) {
+    panel.innerHTML = `
+      <div class="panel-card">
+        <div class="poin-panel-header">
+          <div class="panel-badge ${kelas}-badge">${kelasIcon}</div>
+          <div><h2>${kelasLabel}</h2><p>Papan Peringkat</p></div>
+          <button class="poin-reset-btn" onclick="openResetModal()">🔄 Reset Tahun</button>
+        </div>
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <p>Tidak ada anak yang cocok dengan "<strong>${escapeHtml(state.searchQuery)}</strong>"</p>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const maxPoin = semua[0].poin || 1;
 
   const cards = siswa.map((stu, i) => {
-    const rank      = i + 1;
-    const pct       = maxPoin > 0 ? Math.round((stu.poin / maxPoin) * 100) : 0;
-    const rankBadge = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-    const initial   = stu.nama.trim().charAt(0).toUpperCase();
+    // rank tetap berdasarkan posisi global (semua), bukan hasil filter
+    const globalRank = semua.findIndex(s => s.id === stu.id) + 1;
+    const pct        = maxPoin > 0 ? Math.round((stu.poin / maxPoin) * 100) : 0;
+    const rankBadge  = globalRank === 1 ? '🥇' : globalRank === 2 ? '🥈' : globalRank === 3 ? '🥉' : `#${globalRank}`;
+    const initial    = stu.nama.trim().charAt(0).toUpperCase();
     const avatarHtml = stu.fotoUrl
       ? `<img src="${driveProxyUrl(stu.fotoUrl)}" alt="" class="poin-avatar-img" onerror="this.parentElement.innerHTML='${initial}'"/>`
       : initial;
@@ -200,7 +248,7 @@ function renderPanel(kelas) {
         <div class="poin-rank">${rankBadge}</div>
         <div class="poin-avatar${stu.fotoUrl ? ' has-foto' : ''}">${avatarHtml}</div>
         <div class="poin-info">
-          <div class="poin-nama">${escapeHtml(stu.nama)}</div>
+          <div class="poin-nama">${highlightMatch(stu.nama, state.searchQuery)}</div>
           <div class="poin-bar-wrap">
             <div class="poin-bar-fill" style="width:${pct}%"></div>
           </div>
@@ -212,13 +260,17 @@ function renderPanel(kelas) {
       </div>`;
   }).join('');
 
+  const subtitle = state.searchQuery
+    ? `${siswa.length} dari ${semua.length} anak`
+    : `Papan Peringkat · ${semua.length} anak`;
+
   panel.innerHTML = `
     <div class="panel-card">
       <div class="poin-panel-header">
         <div class="panel-badge ${kelas}-badge">${kelasIcon}</div>
         <div>
           <h2>${kelasLabel}</h2>
-          <p>Papan Peringkat · ${siswa.length} anak</p>
+          <p>${subtitle}</p>
         </div>
         <button class="poin-reset-btn" onclick="openResetModal()">🔄 Reset Tahun</button>
       </div>
@@ -271,13 +323,15 @@ function renderFilter() {
 function renderPanelSemua() {
   const panel = document.getElementById('poin-panel');
 
-  const semua = [
+  const semuaRaw = [
     ...state.kecil.map(s  => ({ ...s, kelas: 'kecil'  })),
     ...state.tengah.map(s => ({ ...s, kelas: 'tengah' })),
     ...state.besar.map(s  => ({ ...s, kelas: 'besar'  })),
   ].sort((a, b) => b.poin - a.poin);
 
-  if (!semua.length) {
+  const semua = filterBySearch(semuaRaw);
+
+  if (!semuaRaw.length) {
     panel.innerHTML = `
       <div class="panel-card">
         <div class="poin-panel-header">
@@ -290,19 +344,35 @@ function renderPanelSemua() {
     return;
   }
 
-  const maxPoin   = semua[0].poin || 1;
+  if (!semua.length) {
+    panel.innerHTML = `
+      <div class="panel-card">
+        <div class="poin-panel-header">
+          <div class="panel-badge" style="background:linear-gradient(145deg,#D4A017,#F0C842);font-size:1.4rem">🏆</div>
+          <div><h2>Papan Peringkat Global</h2><p>Semua Kelas</p></div>
+          <button class="poin-reset-btn" onclick="openResetModal()">🔄 Reset Tahun</button>
+        </div>
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <p>Tidak ada anak yang cocok dengan "<strong>${escapeHtml(state.searchQuery)}</strong>"</p>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const maxPoin   = semuaRaw[0].poin || 1;
   const kelasInfo = {
     kecil:  { label: 'Kecil',  icon: '🐣', color: '#E8A87C' },
     tengah: { label: 'Tengah', icon: '🌿', color: '#7CB87C' },
     besar:  { label: 'Besar',  icon: '⭐', color: '#D4A017' },
   };
 
-  const cards = semua.map((stu, i) => {
-    const rank      = i + 1;
-    const pct       = maxPoin > 0 ? Math.round((stu.poin / maxPoin) * 100) : 0;
-    const rankBadge = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-    const ki        = kelasInfo[stu.kelas];
-    const initial   = stu.nama.trim().charAt(0).toUpperCase();
+  const cards = semua.map((stu) => {
+    const globalRank = semuaRaw.findIndex(s => s.id === stu.id) + 1;
+    const pct        = maxPoin > 0 ? Math.round((stu.poin / maxPoin) * 100) : 0;
+    const rankBadge  = globalRank === 1 ? '🥇' : globalRank === 2 ? '🥈' : globalRank === 3 ? '🥉' : `#${globalRank}`;
+    const ki         = kelasInfo[stu.kelas];
+    const initial    = stu.nama.trim().charAt(0).toUpperCase();
     const avatarHtml = stu.fotoUrl
       ? `<img src="${driveProxyUrl(stu.fotoUrl)}" alt="" class="poin-avatar-img" onerror="this.parentElement.innerHTML='${initial}'"/>`
       : initial;
@@ -313,7 +383,7 @@ function renderPanelSemua() {
         <div class="poin-rank">${rankBadge}</div>
         <div class="poin-avatar${stu.fotoUrl ? ' has-foto' : ''}">${avatarHtml}</div>
         <div class="poin-info">
-          <div class="poin-nama">${escapeHtml(stu.nama)}</div>
+          <div class="poin-nama">${highlightMatch(stu.nama, state.searchQuery)}</div>
           <div class="poin-kelas-badge" style="background:${ki.color}22;color:${ki.color};border-color:${ki.color}44">
             ${ki.icon} ${ki.label}
           </div>
@@ -328,13 +398,17 @@ function renderPanelSemua() {
       </div>`;
   }).join('');
 
+  const subtitle = state.searchQuery
+    ? `${semua.length} dari ${semuaRaw.length} anak`
+    : `Semua Kelas · ${semuaRaw.length} anak`;
+
   panel.innerHTML = `
     <div class="panel-card">
       <div class="poin-panel-header">
         <div class="panel-badge" style="background:linear-gradient(145deg,#D4A017,#F0C842);font-size:1.4rem;color:white">🏆</div>
         <div>
           <h2>Papan Peringkat Global</h2>
-          <p>Semua Kelas · ${semua.length} anak</p>
+          <p>${subtitle}</p>
         </div>
         <button class="poin-reset-btn" onclick="openResetModal()">🔄 Reset Tahun</button>
       </div>
@@ -577,6 +651,17 @@ function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* Highlight bagian nama yang cocok dengan query pencarian */
+function highlightMatch(nama, query) {
+  if (!query) return escapeHtml(nama);
+  const escaped = escapeHtml(nama);
+  const escapedQ = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escaped.replace(
+    new RegExp(`(${escapedQ})`, 'gi'),
+    '<mark class="poin-search-hl">$1</mark>'
+  );
+}
+
 function escapeAttr(str) {
   return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
@@ -595,3 +680,70 @@ function driveProxyUrl(url) {
   }
   return url;
 }
+
+/* ============================================================
+   SEARCH CSS — injected at runtime if poin.css is missing
+   (in production, these styles live in poin.css)
+   ============================================================ */
+(function injectSearchStyles() {
+  if (document.getElementById('poin-search-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'poin-search-styles';
+  style.textContent = `
+    .poin-search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--white, #FBF6F3);
+      border: 1.5px solid rgba(123,17,32,0.12);
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin: 0 0 12px;
+      max-width: 740px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 2px 10px rgba(74,10,19,0.05);
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .poin-search-wrap:focus-within {
+      border-color: rgba(123,17,32,0.40);
+      box-shadow: 0 0 0 4px rgba(123,17,32,0.07);
+    }
+    .poin-search-icon { font-size: 1rem; flex-shrink: 0; opacity: 0.5; }
+    .poin-search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-family: var(--font-body, 'Nunito', sans-serif);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text, #2C1810);
+      outline: none;
+      min-width: 0;
+    }
+    .poin-search-input::placeholder { color: var(--text-muted, #A07060); font-weight: 600; }
+    .poin-search-clear {
+      width: 26px; height: 26px;
+      border: none;
+      background: rgba(123,17,32,0.08);
+      border-radius: 50%;
+      font-size: 0.7rem;
+      color: var(--text-mid, #6B3A2A);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.12s;
+    }
+    .poin-search-clear:hover  { background: rgba(123,17,32,0.16); }
+    .poin-search-clear:active { transform: scale(0.88); }
+    .poin-search-clear.hidden { display: none; }
+    mark.poin-search-hl {
+      background: rgba(212,160,23,0.30);
+      color: inherit;
+      border-radius: 3px;
+      padding: 0 1px;
+      font-weight: 900;
+    }
+  `;
+  document.head.appendChild(style);
+})();

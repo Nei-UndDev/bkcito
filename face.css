@@ -4,6 +4,85 @@
    Diload SETELAH style.css — mewarisi semua CSS variable & utilitas
    ============================================================ */
 
+/* ── REMINDER NOTE BANNER ── */
+.face-note-banner {
+  position: relative;
+  background: linear-gradient(135deg, #FDF6E3, #FBF0C8);
+  border: 1.5px solid rgba(212, 160, 23, 0.38);
+  border-radius: var(--radius-sm);
+  padding: 14px 40px 14px 16px;
+  margin-bottom: 14px;
+  animation: fmsNoteIn 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+@keyframes fmsNoteIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.face-note-banner.dismissed {
+  overflow: hidden;
+  animation: fmsNoteOut 0.28s ease forwards;
+}
+@keyframes fmsNoteOut {
+  from { opacity: 1; max-height: 300px; margin-bottom: 14px; padding-top: 14px; padding-bottom: 14px; }
+  to   { opacity: 0; max-height: 0;     margin-bottom: 0;    padding-top: 0;    padding-bottom: 0; }
+}
+
+.face-note-close {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 26px; height: 26px;
+  border: none;
+  background: rgba(212, 160, 23, 0.18);
+  border-radius: 50%;
+  font-size: 0.7rem;
+  color: #7A5C00;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  touch-action: manipulation;
+  transition: background 0.15s, transform 0.12s;
+}
+.face-note-close:hover  { background: rgba(212, 160, 23, 0.35); }
+.face-note-close:active { transform: scale(0.88); }
+
+.face-note-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.face-note-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.face-note-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.face-note-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.face-note-text strong {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #5C4200;
+  line-height: 1.3;
+}
+.face-note-text span {
+  font-size: 0.76rem;
+  color: #8B6914;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.face-note-penting {
+  padding-top: 10px;
+  border-top: 1px dashed rgba(212, 160, 23, 0.30);
+}
+.face-note-penting .face-note-text strong { color: #7A1A10; }
+.face-note-penting .face-note-text span   { color: #A03020; }
+
 /* ── HEADER ADDITIONS ── */
 .face-back-btn {
   display: flex;

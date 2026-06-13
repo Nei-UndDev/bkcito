@@ -109,6 +109,21 @@
       👆 Ketuk nama anak untuk tandai <strong>Hadir</strong> · Ketuk lagi untuk batalkan
     </div>
 
+    <!-- SEARCH BAR -->
+    <div class="app-search-wrap" id="appSearchWrap" style="display: none;">
+      <span class="app-search-icon">🔍</span>
+      <input
+        type="text"
+        id="appSearchInput"
+        class="app-search-input"
+        placeholder="Cari nama anak…"
+        autocomplete="off"
+        autocorrect="off"
+        oninput="applySearch(this.value)"
+      />
+      <button class="app-search-clear hidden" id="appSearchClear" onclick="clearSearch()" aria-label="Hapus pencarian">✕</button>
+    </div>
+
     <!-- ===== PANEL KECIL ===== -->
     <section class="panel" id="panel-kecil" role="tabpanel" aria-labelledby="tab-kecil">
       <div class="panel-card">

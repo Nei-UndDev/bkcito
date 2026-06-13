@@ -71,6 +71,18 @@ document.addEventListener('DOMContentLoaded', () => {
   populateBulanDropdown();
   loadSiswa();
   switchTab('kecil');
+
+  // BUG-15 FIX: Global delegated error handler untuk foto avatar (pengganti onerror inline)
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (img.tagName === 'IMG' && img.classList.contains('avatar-img')) {
+      const avatar = img.parentElement;
+      const fallback = img.getAttribute('data-fallback') || '?';
+      const isHadir  = img.getAttribute('data-hadir') === 'true';
+      avatar.innerHTML = isHadir ? '\u2713' : fallback;
+      avatar.classList.remove('has-foto');
+    }
+  }, true);
 });
 
 function populateBulanDropdown() {
@@ -125,6 +137,14 @@ function switchTab(tab) {
   activeBtn.classList.add('active');
   activeBtn.setAttribute('aria-selected','true');
 
+  const searchWrap = document.getElementById('appSearchWrap');
+  if (searchWrap) {
+    searchWrap.style.display = tab === 'rekap' ? 'none' : 'flex';
+  }
+  if (tab !== 'rekap') {
+    clearSearch();
+  }
+
   // Scroll to top smoothly
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -167,6 +187,50 @@ async function loadSiswa() {
 }
 
 /* ============================================================
+   LIVE SEARCH
+   ============================================================ */
+let appSearchQuery = '';
+
+function applySearch(q) {
+  appSearchQuery = q.trim().toLowerCase();
+  const clearBtn = document.getElementById('appSearchClear');
+  if (clearBtn) clearBtn.classList.toggle('hidden', !appSearchQuery);
+  
+  // Find which tab is active
+  const activeTab = ['kecil','tengah','besar','kakak'].find(t => {
+    const p = document.getElementById(`panel-${t}`);
+    return p && p.classList.contains('active');
+  });
+  if (activeTab) renderStudents(activeTab);
+}
+
+function clearSearch() {
+  appSearchQuery = '';
+  const input = document.getElementById('appSearchInput');
+  const clearBtn = document.getElementById('appSearchClear');
+  if (input) input.value = '';
+  if (clearBtn) clearBtn.classList.add('hidden');
+  
+  const activeTab = ['kecil','tengah','besar','kakak'].find(t => {
+    const p = document.getElementById(`panel-${t}`);
+    return p && p.classList.contains('active');
+  });
+  if (activeTab) renderStudents(activeTab);
+  
+  if (input && activeTab) input.focus();
+}
+
+function highlightMatch(nama, query) {
+  if (!query) return escapeHtml(nama);
+  const escaped = escapeHtml(nama);
+  const escapedQ = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escaped.replace(
+    new RegExp(`(${escapedQ})`, 'gi'),
+    '<mark class="app-search-hl">$1</mark>'
+  );
+}
+
+/* ============================================================
    RENDER
    ============================================================ */
 function renderStudents(kelas) {
@@ -179,8 +243,10 @@ function renderStudents(kelas) {
   const pct   = total > 0 ? Math.round((hadir/total)*100) : 0;
 
   // Update live counter
+  // BUG-14 FIX: Gunakan kata yang sesuai untuk masing-masing kategori
+  const label = kelas === 'kakak' ? 'kakak' : 'anak';
   if (hintEl && total > 0) {
-    hintEl.textContent = `${hadir} dari ${total} anak hadir`;
+    hintEl.textContent = `${hadir} dari ${total} ${label} hadir`;
   } else if (hintEl) {
     hintEl.textContent = '';
   }
@@ -205,12 +271,31 @@ function renderStudents(kelas) {
     return;
   }
 
-  listEl.innerHTML = s.students.map((stu, i) => {
+  // Filter students by search query
+  const filteredStudents = appSearchQuery 
+    ? s.students.filter(stu => stu.nama.toLowerCase().includes(appSearchQuery))
+    : s.students;
+
+  if (filteredStudents.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <p>Tidak ada yang cocok dengan "<strong>${escapeHtml(appSearchQuery)}</strong>"</p>
+      </div>`;
+    updateSummary(kelas);
+    return;
+  }
+
+  // BUG-15 FIX: Jangan pakai inline template di onerror untuk hindari XSS / broken HTML
+  // Gunakan data attribute + event delegation yang aman
+  listEl.innerHTML = filteredStudents.map((stu, i) => {
+    // We need the original index to pass to deleteStudent/openEditModal
+    const origIdx = s.students.findIndex(x => x.id === stu.id);
     const isHadir = !!s.attendance[stu.id];
     const initial = stu.nama.trim().charAt(0).toUpperCase();
     const foto    = stu.fotoUrl || null;
     const avatarContent = foto
-      ? `<img src="${foto}" alt="" class="avatar-img${isHadir?' hadir-dim':''}" onerror="this.parentElement.innerHTML='${isHadir?'✓':initial}';this.parentElement.classList.remove('has-foto')" />${isHadir?'<span class=\"avatar-check\">✓</span>':''}`
+      ? `<img src="${foto}" alt="" class="avatar-img${isHadir?' hadir-dim':''}" data-fallback="${escapeHtml(initial)}" data-hadir="${isHadir}" />${isHadir?'<span class="avatar-check">✓</span>':''}`
       : (isHadir ? '✓' : initial);
     return `
       <div class="student-item ${isHadir ? 'hadir' : ''}"
@@ -219,14 +304,14 @@ function renderStudents(kelas) {
            aria-label="${stu.nama} — ${isHadir ? 'Hadir' : 'Belum absen'}"
            onkeydown="if(event.key==='Enter'||event.key===' ')toggleAttendance('${kelas}','${stu.id}')">
         <div class="student-avatar${foto?' has-foto':''}" aria-hidden="true">${avatarContent}</div>
-        <div class="student-name">${escapeHtml(stu.nama)}</div>
+        <div class="student-name">${highlightMatch(stu.nama, appSearchQuery)}</div>
         <div class="student-status">${isHadir ? '✓ Hadir' : '— Absen'}</div>
         <div class="student-actions">
           <button class="edit-btn"
-                  onclick="event.stopPropagation();openEditModal('${kelas}',${i})"
+                  onclick="event.stopPropagation();openEditModal('${kelas}',${origIdx})"
                   aria-label="Edit ${stu.nama}" title="Edit / Pindah Kelas">✎</button>
           <button class="del-btn"
-                  onclick="event.stopPropagation();deleteStudent('${kelas}',${i})"
+                  onclick="event.stopPropagation();deleteStudent('${kelas}',${origIdx})"
                   aria-label="Hapus ${stu.nama}" title="Hapus">✕</button>
         </div>
       </div>`;
@@ -289,11 +374,18 @@ async function addStudent(kelas) {
   // Show hint if first student
   document.getElementById('hint-bar').classList.add('visible');
 
+  // BUG-08 FIX: Ganti mode:'no-cors' ke fetch normal agar error dari Apps Script bisa dibaca
   try {
     const payload = encodeURIComponent(JSON.stringify({ nama, kelas, id }));
-    await fetch(`${APPS_SCRIPT_URL}?action=tambahSiswa&data=${payload}`, { mode:'no-cors' });
+    const res  = await fetch(`${APPS_SCRIPT_URL}?action=tambahSiswa&data=${payload}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Gagal simpan');
     showToast(`✅ ${nama} ditambahkan!`, 'success');
   } catch(err) {
+    // Rollback state kalau gagal
+    const rollbackIdx = state[kelas].students.findIndex(s => s.id === id);
+    if (rollbackIdx !== -1) state[kelas].students.splice(rollbackIdx, 1);
+    renderStudents(kelas);
     showToast('⚠️ Gagal simpan ke Sheets', 'error');
   }
 }
@@ -309,9 +401,12 @@ function deleteStudent(kelas, idx) {
       state[kelas].students.splice(idx, 1);
       delete state[kelas].attendance[stu.id];
       renderStudents(kelas);
+      // BUG-08 FIX: Baca response untuk mendeteksi error dari Apps Script
       try {
         const payload = encodeURIComponent(JSON.stringify({ nama: stu.nama, kelas, id: stu.id }));
-        await fetch(`${APPS_SCRIPT_URL}?action=hapusSiswa&data=${payload}`, { mode:'no-cors' });
+        const res  = await fetch(`${APPS_SCRIPT_URL}?action=hapusSiswa&data=${payload}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Gagal hapus');
         showToast(`🗑 ${stu.nama} dihapus`, '');
       } catch(err) {
         showToast('⚠️ Gagal hapus dari Sheets', 'error');
@@ -426,13 +521,15 @@ async function saveEditModal() {
     showToast(label, 'success');
   }
 
-  // Simpan perubahan nama/kelas ke Apps Script
+  // BUG-08 FIX: Baca response untuk mendeteksi error dari Apps Script
   if (namaChanged || pindah) {
     try {
       const payload = encodeURIComponent(JSON.stringify({
         id, namaLama, namaBaru, kelasLama, kelasBaru
       }));
-      await fetch(`${APPS_SCRIPT_URL}?action=editSiswa&data=${payload}`, { mode: 'no-cors' });
+      const res  = await fetch(`${APPS_SCRIPT_URL}?action=editSiswa&data=${payload}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Gagal sinkron');
     } catch(err) {
       showToast('⚠️ Gagal sinkron nama ke Sheets', 'error');
     }
@@ -457,7 +554,6 @@ async function saveEditModal() {
    ============================================================ */
 
 // _fotoState: { changed, newDataUrl, deleteExisting }
-window._fotoState = { changed: false, newDataUrl: null, deleteExisting: false };
 
 /* ---- Handle file input change ---- */
 function handleFotoUpload(event) {
@@ -647,12 +743,21 @@ async function submitAbsensi(kelas) {
     .filter(stu => s.attendance[stu.id])
     .map(stu => ({ tanggal, sesi: `Sesi ${sesi}`, kelas, nama: stu.nama, status: 'Hadir' }));
 
-  // Helper: jalankan simpan yang sebenarnya
+  // BUG-02 FIX: Gunakan POST (bukan GET) untuk submit absensi
+  // agar tidak kena batas URL length ~2000 karakter saat kelas besar dengan banyak anak
   const doSimpan = async () => {
     showLoading(`Menyimpan absensi Kelas ${capitalize(kelas)} Sesi ${sesi}...`);
     try {
-      const encoded = encodeURIComponent(JSON.stringify(rows));
-      await fetch(`${APPS_SCRIPT_URL}?action=absensi&data=${encoded}`, { mode:'no-cors' });
+      // Format baru: { meta, rows } sehingga backend bisa handle kasus 0 hadir
+      const body = JSON.stringify({
+        action: 'absensi',
+        data: { meta: { tanggal, sesi: `Sesi ${sesi}`, kelas }, rows }
+      });
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body,
+      });
       hideLoading();
       showToast(`✅ Tersimpan! ${hadir}/${total} hadir — Sesi ${sesi}`, 'success');
       clearAll_silent(kelas);
@@ -686,9 +791,11 @@ async function submitAbsensi(kelas) {
 
     if (cekData.ok) {
       // Nama yang sudah ada di tanggal + sesi + kelas ini
+      // BUG-07 FIX: Normalize tanggal sebelum compare untuk hindari mismatch format
+      const normTgl = (t) => String(t).trim().substring(0, 10);
       const namaLama = new Set(
         (cekData.result || [])
-          .filter(r => r[0] === tanggal && r[1] === sesiLabel && r[2] === kelas)
+          .filter(r => normTgl(r[0]) === normTgl(tanggal) && r[1] === sesiLabel && r[2] === kelas)
           .map(r => r[3])
       );
 
@@ -945,7 +1052,8 @@ function renderRekap(rows, dari, sampai, sesi) {
       cutout: '58%',
       plugins: {
         legend:{ position:'bottom', labels:{ font:fontOpts, color:'#2C1810', padding:16 } },
-        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw} anak (${Math.round(ctx.raw/totalHadir*100)}%)` } }
+        // BUG-04 FIX: Guard division by zero saat totalHadir = 0
+        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw} anak (${totalHadir > 0 ? Math.round(ctx.raw/totalHadir*100) : 0}%)` } }
       }
     }
   });
@@ -991,8 +1099,17 @@ function getExportMeta() {
 function exportCSV() {
   closeExportModal();
   const { filename } = getExportMeta();
-  const csv  = ['Tanggal,Sesi,Kelas,Nama,Timestamp',
-    ...state.rekapData.map(r=>r.join(','))].join('\n');
+  // BUG-11 FIX: Escape fields yang mengandung koma atau newline agar CSV tidak rusak
+  const escCsv = (val) => {
+    const s = String(val == null ? '' : val);
+    return (s.includes(',') || s.includes('"') || s.includes('\n'))
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
+  };
+  const csv = [
+    ['Tanggal','Sesi','Kelas','Nama','Timestamp'].map(escCsv).join(','),
+    ...state.rekapData.map(r => r.map(escCsv).join(','))
+  ].join('\n');
   const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   triggerDownload(URL.createObjectURL(blob), filename+'.csv');
   showToast('✅ CSV didownload!','success');
@@ -1058,7 +1175,7 @@ function exportPDF() {
   });
 
   const totalHadir=byKelas.kecil.hadir+byKelas.tengah.hadir+byKelas.besar.hadir+byKelas.kakak.hadir;
-  const totalAll=totalHadir;
+  // BUG-13 FIX: Hapus variabel totalAll yang tidak terpakai (dead code)
 
   const tableRows=Object.values(byDate)
     .sort((a,b)=>a.tgl.localeCompare(b.tgl)||a.sesi.localeCompare(b.sesi))
@@ -1116,10 +1233,16 @@ function exportPDF() {
 <div class="footer">Beloved Kids Cito · Melayani dengan Kasih ♥</div>
 </body></html>`;
 
-  const win=window.open('','_blank','width=900,height=700');
+  // BUG-05 FIX: Buka window SEBELUM async/await agar tidak dianggap bukan user gesture
+  // Popup blocker hanya aktif kalau window.open() dipanggil di luar user gesture chain
+  const win = window.open('','_blank','width=900,height=700');
+  if (!win) {
+    showToast('❌ Popup diblokir browser! Izinkan popup untuk halaman ini.', 'error');
+    return;
+  }
   win.document.write(printHTML);
   win.document.close();
-  win.onload=()=>{ win.focus(); win.print(); };
+  win.onload = () => { win.focus(); win.print(); };
   showToast('📄 Halaman PDF siap dicetak!','success');
 }
 

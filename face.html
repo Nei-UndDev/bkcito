@@ -30,15 +30,36 @@
       <div class="header-text">
         <div class="header-date">📷 Face Recognition</div>
         <h1 class="header-title">Absensi Wajah</h1>
-        <p class="header-tagline">Scan otomatis · Konfirmasi guru · Simpan ke Sheets</p>
+        <p class="header-tagline">Scan otomatis · Konfirmasi kakak Sekming · Simpan ke Sheets</p>
       </div>
-      <div class="face-header-bot" aria-hidden="true">🤖</div>
+      <button class="help-btn" onclick="openHelp()" aria-label="Panduan penggunaan">?</button>
     </div>
     <div class="header-ring" aria-hidden="true"></div>
   </header>
 
   <!-- ══ MAIN ══ -->
   <main class="main-content">
+
+    <!-- ── REMINDER NOTE ── -->
+    <div class="face-note-banner" id="faceNoteBanner">
+      <button class="face-note-close" onclick="dismissNote()" aria-label="Tutup notif">✕</button>
+      <div class="face-note-row">
+        <div class="face-note-bullet">
+          <span class="face-note-icon">💡</span>
+          <div class="face-note-text">
+            <strong>Pastikan pencahayaan dalam kondisi baik</strong>
+            <span>Hindari latar belakang terlalu terang atau ruangan terlalu gelap agar wajah mudah dikenali.</span>
+          </div>
+        </div>
+        <div class="face-note-bullet face-note-penting">
+          <span class="face-note-icon">❗</span>
+          <div class="face-note-text">
+            <strong>Jangan lupa klik "Simpan Absensi" setelah scan!</strong>
+            <span>Absensi yang sudah dikonfirmasi belum tersimpan ke Sheets sampai kamu klik tombol simpan di bawah.</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 1. Setup -->
     <div class="panel-card face-card">
@@ -128,10 +149,10 @@
         <div class="face-sec-icon si-queue">⏳</div>
         <div style="flex:1">
           <div class="face-sec-title">
-            Menunggu Konfirmasi Guru
+            Menunggu Konfirmasi Kakak Sekming
             <span class="face-badge" id="queueCount">0</span>
           </div>
-          <div class="face-sec-sub">Guru wajib konfirmasi setiap hasil scan</div>
+          <div class="face-sec-sub">Kakak Sekming wajib konfirmasi setiap hasil scan</div>
         </div>
       </div>
       <div class="face-queue-list" id="queueList">
@@ -151,7 +172,7 @@
             Sudah Hadir
             <span class="face-badge face-badge-green" id="confirmedCount">0</span>
           </div>
-          <div class="face-sec-sub">Absensi yang sudah dikonfirmasi guru</div>
+          <div class="face-sec-sub">Absensi yang sudah dikonfirmasi kakak Sekming</div>
         </div>
       </div>
       <div id="confirmedList">
@@ -317,6 +338,173 @@
   <!-- Hidden file input for assign photo -->
   <input type="file" id="assignFotoInput" accept="image/jpeg,image/png,image/webp"
          style="display:none" onchange="handleAssignFotoUpload(event)" />
+
+  <!-- ══ HELP MODAL ══ -->
+  <div class="modal-overlay" id="helpModal" onclick="if(event.target===this)closeHelp()">
+    <div class="modal-box help-modal-box" role="dialog" aria-modal="true" aria-label="Panduan Absensi Wajah">
+
+      <div class="help-header">
+        <div class="help-header-text">
+          <div class="help-icon">📖</div>
+          <div>
+            <h3 class="modal-title">Panduan Absensi Wajah</h3>
+            <p class="modal-sub">Face Recognition · Beloved Kids Cito</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeHelp()" aria-label="Tutup">✕</button>
+      </div>
+
+      <div class="help-tabs">
+        <button class="help-tab active" onclick="switchHelp('cara-pakai', this)">📷 Cara Pakai</button>
+        <button class="help-tab" onclick="switchHelp('foto', this)">🖼 Foto Profil</button>
+        <button class="help-tab" onclick="switchHelp('tips', this)">💡 Tips & FAQ</button>
+      </div>
+
+      <div class="help-content">
+
+        <!-- ── Panel: Cara Pakai ── -->
+        <div class="help-panel active" id="help-cara-pakai">
+          <div class="help-section">
+            <p class="help-lead">Cara scan wajah untuk absensi otomatis dalam 5 langkah.</p>
+
+            <div class="help-step">
+              <div class="help-step-num">1</div>
+              <div>
+                <div class="help-step-title">Isi Info Ibadah</div>
+                <div class="help-step-desc">Pastikan <strong>Tanggal</strong>, <strong>Sesi</strong>, dan <strong>Kelas</strong> sudah benar sebelum mulai scan. Filter kelas mempersempit pencarian sehingga hasil lebih akurat dan cepat.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">2</div>
+              <div>
+                <div class="help-step-title">Aktifkan Kamera</div>
+                <div class="help-step-desc">Tekan tombol <strong>🎥 Aktifkan Kamera</strong>. Izinkan akses kamera saat browser meminta. Oval kuning akan muncul sebagai panduan posisi wajah. Oval berubah <strong>hijau</strong> otomatis saat wajah terdeteksi.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">3</div>
+              <div>
+                <div class="help-step-title">Scan Wajah</div>
+                <div class="help-step-desc">Arahkan wajah anak ke dalam oval hingga oval hijau, lalu tekan <strong>🔍 Scan Wajah</strong>. Sistem otomatis mencocokkan wajah dengan foto profil yang ada di data.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">4</div>
+              <div>
+                <div class="help-step-title">Konfirmasi Hasil — Wajib!</div>
+                <div class="help-step-desc">Muncul popup perbandingan foto scan vs foto profil beserta persentase kecocokan. Kakak Sekming harus tekan <strong>✅ Ya, Ini Benar</strong> atau <strong>✕ Bukan Dia</strong> — sistem tidak akan langsung catat tanpa konfirmasi.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">5</div>
+              <div>
+                <div class="help-step-title">Simpan ke Sheets</div>
+                <div class="help-step-desc">Setelah semua anak di-scan dan dikonfirmasi, tekan <strong>💾 Simpan Absensi ke Sheets</strong> di bagian bawah. Ini langkah wajib — data belum tersimpan sebelum tombol ini ditekan!</div>
+              </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">⚠️</span>
+              <span>Jangan tutup halaman sebelum menekan <strong>Simpan Absensi</strong> — semua data konfirmasi akan hilang.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Panel: Foto Profil ── -->
+        <div class="help-panel" id="help-foto">
+          <div class="help-section">
+            <p class="help-lead">Foto profil adalah kunci akurasi — berikut cara kelolaannya.</p>
+
+            <div class="help-item">
+              <div class="help-item-icon">➕</div>
+              <div>
+                <div class="help-item-title">Anak Belum Terdeteksi?</div>
+                <div class="help-item-desc">Kalau scan tidak menemukan kecocokan, muncul pilihan: <strong>Tambah Anak Baru</strong> (daftarkan anak baru langsung di sini) atau <strong>Tambahkan Foto Profil</strong> (pilih anak yang sudah ada di daftar lalu upload fotonya).</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">📸</div>
+              <div>
+                <div class="help-item-title">Standar Foto yang Bagus</div>
+                <div class="help-item-desc">Gunakan foto <strong>wajah close-up</strong>, pencahayaan merata, tidak pakai masker atau kacamata gelap. Satu wajah per foto. Kondisi foto yang mirip dengan kondisi saat scan akan menghasilkan akurasi lebih tinggi.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">✎</div>
+              <div>
+                <div class="help-item-title">Edit Foto Lewat Halaman Utama</div>
+                <div class="help-item-desc">Foto juga bisa dikelola dari halaman Absensi utama: tap <strong>✎</strong> di kartu anak → scroll ke bagian Foto Anak → tap area upload atau tap <em>🗑 Hapus foto</em>. Perubahan langsung sync ke semua perangkat.</div>
+              </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">💡</span>
+              <span>Model AI perlu <strong>10–30 detik</strong> loading pertama kali (butuh internet). Setelah itu scan berlangsung cepat selama halaman masih terbuka.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Panel: Tips & FAQ ── -->
+        <div class="help-panel" id="help-tips">
+          <div class="help-section">
+            <p class="help-lead">Pertanyaan umum & tips biar makin sat set.</p>
+
+            <div class="help-item">
+              <div class="help-item-icon">🟡</div>
+              <div>
+                <div class="help-item-title">Arti Warna Badge Kecocokan</div>
+                <div class="help-item-desc"><strong>🟢 Akurasi Tinggi</strong> — sistem sangat yakin ini wajah yang sama. <strong>🟡 Cukup Yakin</strong> — ada kecocokan tapi kurang kuat, perhatikan lebih teliti sebelum konfirmasi. Selalu bandingkan kedua foto sebelum tekan Hadir.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">💡</div>
+              <div>
+                <div class="help-item-title">Akurasi Rendah?</div>
+                <div class="help-item-desc">Coba: pastikan <strong>pencahayaan cukup</strong>, wajah tidak terpotong, kamera tidak terlalu jauh. Kalau tetap meleset, update foto profil anak dengan foto yang lebih baru dan kondisi lebih mirip dengan tempat ibadah.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">🔄</div>
+              <div>
+                <div class="help-item-title">Model AI Gagal Loading?</div>
+                <div class="help-item-desc">Cek koneksi internet dan refresh halaman. Model (~6MB) didownload dari CDN — butuh koneksi stabil pertama kali. Setelah berhasil sekali, browser biasanya cache model sehingga loading berikutnya lebih cepat.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">👥</div>
+              <div>
+                <div class="help-item-title">Bisa Dipakai Bersamaan?</div>
+                <div class="help-item-desc">Bisa — buka di beberapa HP sekaligus. Tapi pastikan tidak simpan absensi <strong>kelas + sesi + tanggal yang sama</strong> dari dua perangkat bersamaan karena data bisa tertimpa.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">⏱</div>
+              <div>
+                <div class="help-item-title">Berapa Lama Proses Scan?</div>
+                <div class="help-item-desc">Deteksi wajah sekitar <strong>1–3 detik</strong> per anak. Loading descriptor wajah dari semua foto profil dilakukan di background saat halaman pertama dibuka — makin banyak anak, makin lama persiapannya (biasanya 10–30 detik).</div>
+              </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">🌐</span>
+              <span>Halaman ini butuh <strong>koneksi internet</strong> untuk load model AI dan data siswa dari Sheets. Setelah data termuat, scan bisa tetap jalan walau koneksi putus sesaat — tapi simpan ke Sheets butuh internet kembali.</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end help-content -->
+    </div>
+  </div>
 
   <script src="face.js"></script>
 </body>

@@ -84,6 +84,21 @@
       </button>
     </nav>
 
+    <!-- SEARCH BAR -->
+    <div class="poin-search-wrap" id="poinSearchWrap">
+      <span class="poin-search-icon">🔍</span>
+      <input
+        type="text"
+        id="poinSearchInput"
+        class="poin-search-input"
+        placeholder="Cari nama anak…"
+        autocomplete="off"
+        autocorrect="off"
+        oninput="applySearch(this.value)"
+      />
+      <button class="poin-search-clear hidden" id="poinSearchClear" onclick="clearSearch()" aria-label="Hapus pencarian">✕</button>
+    </div>
+
     <!-- PANEL per kelas -->
     <div id="poin-panel" class="poin-panel-wrap">
       <!-- Dirender oleh JS -->

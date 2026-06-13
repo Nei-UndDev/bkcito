@@ -27,11 +27,42 @@ let confirmedList = [];     // sudah dikonfirmasi
 /* ── DOM REFS (diisi setelah DOMContentLoaded) ── */
 let videoEl, canvasEl;
 
+let currentDate = '';
+let currentSesi = '1';
+
 /* ============================================================
    INIT
 ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+  const dateInput = document.getElementById('inputDate');
+  const sesiInput = document.getElementById('inputSesi');
+  
+  dateInput.value = new Date().toISOString().split('T')[0];
+  currentDate = dateInput.value;
+  currentSesi = sesiInput.value;
+
+  // Clear session data if user changes date/session
+  dateInput.addEventListener('change', (e) => {
+    if (confirmedList.length || pendingQueue.length) {
+      if (!confirm('Ganti tanggal akan mereset daftar scan di layar. Lanjutkan?')) {
+        e.target.value = currentDate;
+        return;
+      }
+    }
+    currentDate = e.target.value;
+    clearSessionData();
+  });
+
+  sesiInput.addEventListener('change', (e) => {
+    if (confirmedList.length || pendingQueue.length) {
+      if (!confirm('Ganti sesi akan mereset daftar scan di layar. Lanjutkan?')) {
+        e.target.value = currentSesi;
+        return;
+      }
+    }
+    currentSesi = e.target.value;
+    clearSessionData();
+  });
 
   videoEl  = document.getElementById('videoEl');
   canvasEl = document.getElementById('canvasEl');
@@ -39,6 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
   loadModels();
   loadStudentData();
 });
+
+function clearSessionData() {
+  confirmedList = [];
+  pendingQueue = [];
+  renderConfirmed();
+  renderQueue();
+}
 
 /* ============================================================
    LOAD FACE-API MODELS
@@ -538,21 +576,69 @@ async function saveAllAttendance() {
         nama:   it.nama,
         status: 'Hadir',
       }));
-      const encoded = encodeURIComponent(JSON.stringify(rows));
-      return fetch(`${APPS_SCRIPT_URL}?action=absensi&data=${encoded}`, { mode: 'no-cors' });
+      
+      const body = JSON.stringify({
+        action: 'absensi',
+        data: { meta: { tanggal, sesi: sesiLabel, kelas, mode: 'append' }, rows }
+      });
+
+      return fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body,
+      });
     });
 
-    await Promise.all(promises);
+    const results = await Promise.all(promises);
+    for (const res of results) {
+      // Because we're no longer using no-cors, we can read the JSON response safely
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+    }
+    
     showToast(`✅ ${confirmedList.length} absensi tersimpan ke Sheets!`, 'success');
 
     btn.disabled  = false;
     btn.innerHTML = '✅ Tersimpan! Simpan Lagi';
+    
+    // Clear the confirmed list so they don't get saved again
+    clearSessionData();
   } catch (e) {
     console.error('[saveAllAttendance]', e);
     btn.disabled  = false;
     btn.innerHTML = '💾 Simpan Absensi ke Sheets';
-    showToast('❌ Gagal simpan, coba lagi', 'error');
+    showToast('❌ Gagal simpan, cek koneksi!', 'error');
   }
+}
+
+/* ============================================================
+   REMINDER NOTE
+============================================================ */
+function dismissNote() {
+  const el = document.getElementById('faceNoteBanner');
+  if (!el) return;
+  el.classList.add('dismissed');
+  el.addEventListener('animationend', () => el.remove(), { once: true });
+}
+
+/* ============================================================
+   HELP MODAL
+============================================================ */
+function openHelp() {
+  document.getElementById('helpModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHelp() {
+  document.getElementById('helpModal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function switchHelp(panel, btn) {
+  document.querySelectorAll('#helpModal .help-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#helpModal .help-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(`help-${panel}`).classList.add('active');
+  btn.classList.add('active');
 }
 
 /* ============================================================
@@ -617,7 +703,9 @@ async function submitAddStudent() {
 
   try {
     const payload = encodeURIComponent(JSON.stringify({ nama, kelas, id }));
-    await fetch(`${APPS_SCRIPT_URL}?action=tambahSiswa&data=${payload}`, { mode: 'no-cors' });
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=tambahSiswa&data=${payload}`);
+    const dataJSON = await res.json();
+    if (!dataJSON.ok) throw new Error(dataJSON.error);
 
     // Add to local allStudents pool (no descriptor yet — they don't have a photo)
     allStudents.push({ id, nama, kelas, fotoUrl: '', descriptor: null });
@@ -812,4 +900,3 @@ function _resizeImageFace(dataUrl, maxSize, callback) {
   };
   img.src = dataUrl;
 }
-
