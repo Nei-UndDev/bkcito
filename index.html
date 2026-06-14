@@ -6,14 +6,67 @@
   <meta name="theme-color" content="#4A0A13" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Absensi Wajah — Beloved Kids Cito</title>
-  <link rel="icon" type="image/x-icon" href="BK Cito.ico" />
+  <title>Absensi Beloved Kids Cito</title>
+  <link rel="icon" type="image/x-icon" href="BK Cito.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="face.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <style>
+    /* ── Live Search Bar (index.html) ── */
+    .student-search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: #F0E8E2;
+      border: 1.5px solid rgba(123,17,32,0.10);
+      border-radius: 14px;
+      padding: 9px 13px;
+      margin-bottom: 10px;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .student-search-wrap:focus-within {
+      border-color: rgba(123,17,32,0.38);
+      box-shadow: 0 0 0 4px rgba(123,17,32,0.07);
+      background: white;
+    }
+    .student-search-icon { font-size: 0.95rem; flex-shrink: 0; opacity: 0.45; }
+    .student-search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+    .student-search-input::placeholder { color: var(--text-muted); font-weight: 600; }
+    .student-search-clear {
+      width: 24px; height: 24px;
+      border: none;
+      background: rgba(123,17,32,0.08);
+      border-radius: 50%;
+      font-size: 0.65rem;
+      color: var(--text-mid);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.12s;
+      touch-action: manipulation;
+    }
+    .student-search-clear:hover  { background: rgba(123,17,32,0.16); }
+    .student-search-clear:active { transform: scale(0.88); }
+    .student-search-clear.hidden { display: none; }
+    mark.search-hl {
+      background: rgba(212,160,23,0.30);
+      color: inherit;
+      border-radius: 3px;
+      padding: 0 1px;
+      font-weight: 900;
+    }
+  </style>
 </head>
 <body>
 
@@ -21,464 +74,687 @@
     <span></span><span></span><span></span><span></span><span></span>
   </div>
 
+  <!-- LOADING -->
+  <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite">
+    <div class="loading-mascot" aria-hidden="true">
+      <div class="loading-emoji" id="loadingEmoji">🐣</div>
+      <div class="loading-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+    <p id="loadingMsg">Memuat data...</p>
+    <p class="loading-sub" id="loadingSub">Bentar ya, lagi ngambil daftar anak...</p>
+  </div>
+
+  <!-- TOAST -->
   <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
 
-  <!-- ══ HEADER ══ -->
+  <!-- HEADER -->
   <header class="site-header">
     <div class="header-inner">
-      <a href="index.html" class="face-back-btn" aria-label="Kembali">&#8592;</a>
+      <div class="logo-wrap">
+        <img src="BK Cito.jpeg" alt="Beloved Kids Cito" class="site-logo" />
+      </div>
       <div class="header-text">
-        <div class="header-date">📷 Face Recognition</div>
-        <h1 class="header-title">Absensi Wajah</h1>
-        <p class="header-tagline">Scan otomatis · Konfirmasi kakak Sekming · Simpan ke Sheets</p>
+        <div class="header-date" id="headerDate"></div>
+        <h1 class="header-title">Beloved Kids Cito</h1>
+        <p class="header-tagline">Sistem Absensi Jemaat Anak</p>
       </div>
       <button class="help-btn" onclick="openHelp()" aria-label="Panduan penggunaan">?</button>
     </div>
     <div class="header-ring" aria-hidden="true"></div>
   </header>
 
-  <!-- ══ MAIN ══ -->
+  <!-- MAIN -->
   <main class="main-content">
 
-    <!-- ── REMINDER NOTE ── -->
-    <div class="face-note-banner" id="faceNoteBanner">
-      <button class="face-note-close" onclick="dismissNote()" aria-label="Tutup notif">✕</button>
-      <div class="face-note-row">
-        <div class="face-note-bullet">
-          <span class="face-note-icon">💡</span>
-          <div class="face-note-text">
-            <strong>Pastikan pencahayaan dalam kondisi baik</strong>
-            <span>Hindari latar belakang terlalu terang atau ruangan terlalu gelap agar wajah mudah dikenali.</span>
+    <div class="config-banner hidden" id="config-banner">
+      <span>⚙️</span>
+      <div>Setup diperlukan! Isi <code>SPREADSHEET_ID</code>, <code>API_KEY</code>, dan <code>APPS_SCRIPT_URL</code> di <code>app.js</code>.</div>
+    </div>
+
+    <!-- TABS -->
+    <nav class="tab-nav" role="tablist" aria-label="Pilih Kelas">
+      <button class="tab-btn" id="tab-kecil"  role="tab" aria-selected="false" onclick="switchTab('kecil')" >
+        <span class="tab-icon" aria-hidden="true">🐣</span>
+        <span class="tab-label">Kecil</span>
+        <span class="tab-sub">3–6 thn</span>
+      </button>
+      <button class="tab-btn" id="tab-tengah" role="tab" aria-selected="false" onclick="switchTab('tengah')">
+        <span class="tab-icon" aria-hidden="true">🌿</span>
+        <span class="tab-label">Tengah</span>
+        <span class="tab-sub">7–9 thn</span>
+      </button>
+      <button class="tab-btn" id="tab-besar"  role="tab" aria-selected="false" onclick="switchTab('besar')" >
+        <span class="tab-icon" aria-hidden="true">⭐</span>
+        <span class="tab-label">Besar</span>
+        <span class="tab-sub">10+ thn</span>
+      </button>
+      <button class="tab-btn" id="tab-kakak"  role="tab" aria-selected="false" onclick="switchTab('kakak')" >
+        <span class="tab-icon" aria-hidden="true">👑</span>
+        <span class="tab-label">Kakak</span>
+        <span class="tab-sub">Sekming</span>
+      </button>
+      <button class="tab-btn" id="tab-rekap"  role="tab" aria-selected="false" onclick="switchTab('rekap')" >
+        <span class="tab-icon" aria-hidden="true">📊</span>
+        <span class="tab-label">Rekap</span>
+        <span class="tab-sub">Laporan</span>
+      </button>
+    </nav>
+
+    <!-- SHORTCUTS -->
+    <div class="shortcut-bar-row">
+      <a href="poin.html" class="poin-shortcut-btn">
+        <span>🏅</span>
+        <span>Lihat Papan Poin</span>
+        <span class="poin-shortcut-arrow">›</span>
+      </a>
+      <a href="face.html" class="face-shortcut-btn">
+        <span class="fsc-icon">📷</span>
+        <div class="fsc-text">
+          <div class="fsc-label">Absensi Wajah</div>
+          <div class="fsc-sub">Scan otomatis via AI</div>
+        </div>
+        <span class="fsc-arrow">›</span>
+      </a>
+    </div>
+
+    <!-- HINT BAR -->
+    <div class="hint-bar" id="hint-bar">
+      👆 Ketuk nama anak untuk tandai <strong>Hadir</strong> · Ketuk lagi untuk batalkan
+    </div>
+
+    <!-- ===== PANEL KECIL ===== -->
+    <section class="panel" id="panel-kecil" role="tabpanel" aria-labelledby="tab-kecil">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge kecil-badge" aria-hidden="true">🐣</div>
+          <div>
+            <h2>Kelas Kecil</h2>
+            <p>Usia 3–6 Tahun</p>
           </div>
         </div>
-        <div class="face-note-bullet face-note-penting">
-          <span class="face-note-icon">❗</span>
-          <div class="face-note-text">
-            <strong>Jangan lupa klik "Simpan Absensi" setelah scan!</strong>
-            <span>Absensi yang sudah dikonfirmasi belum tersimpan ke Sheets sampai kamu klik tombol simpan di bawah.</span>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date-kecil">📅 Tanggal Ibadah</label>
+            <input type="date" id="date-kecil" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label for="sesi-kecil">🕐 Sesi</label>
+            <select id="sesi-kecil" class="form-input">
+              <option value="1">Sesi 1</option>
+              <option value="2">Sesi 2</option>
+              <option value="3">Sesi 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="add-row">
+          <input type="text" id="newName-kecil" class="form-input"
+            placeholder="Nama anak baru..."
+            autocomplete="off" autocorrect="off" autocapitalize="words"
+            onkeydown="if(event.key==='Enter') addStudent('kecil')" />
+          <button class="btn btn-add" onclick="addStudent('kecil')" aria-label="Tambah siswa">
+            ➕ Tambah
+          </button>
+        </div>
+
+        <!-- Attendance counter badge -->
+        <div class="attendance-hint" id="hint-kecil"></div>
+        <div class="progress-wrap" id="progress-wrap-kecil" style="display:none">
+          <div class="progress-label">
+            <span>Kehadiran</span>
+            <strong id="progress-text-kecil">0 / 0</strong>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill-kecil" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Search bar -->
+        <div class="student-search-wrap">
+          <span class="student-search-icon">🔍</span>
+          <input type="text" id="search-input-kecil" class="student-search-input"
+                 placeholder="Cari nama anak…"
+                 autocomplete="off" autocorrect="off"
+                 oninput="applySearch('kecil', this.value)" />
+          <button class="student-search-clear hidden" id="search-clear-kecil"
+                  onclick="clearSearch('kecil')" aria-label="Hapus pencarian">✕</button>
+        </div>
+
+        <!-- Skeleton loader -->
+        <div class="skeleton-list" id="skeleton-kecil">
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w85"></div><div class="skeleton-line w50"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w60"></div><div class="skeleton-line w35"></div></div></div>
+        </div>
+        <div class="student-list" id="list-kecil" aria-label="Daftar siswa kelas kecil"></div>
+        <div class="summary-bar" id="summary-kecil"></div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="submitAbsensi('kecil')">
+            💾 Simpan Absensi
+          </button>
+        </div>
+        <hr class="action-divider">
+        <div class="action-row">
+          <button class="btn btn-ghost" onclick="selectAll('kecil')">✅ Semua Hadir</button>
+          <button class="btn btn-ghost" onclick="clearAll('kecil')">✖ Reset Semua</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PANEL TENGAH ===== -->
+    <section class="panel" id="panel-tengah" role="tabpanel" aria-labelledby="tab-tengah">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge tengah-badge" aria-hidden="true">🌿</div>
+          <div>
+            <h2>Kelas Tengah</h2>
+            <p>Usia 7–9 Tahun</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date-tengah">📅 Tanggal Ibadah</label>
+            <input type="date" id="date-tengah" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label for="sesi-tengah">🕐 Sesi</label>
+            <select id="sesi-tengah" class="form-input">
+              <option value="1">Sesi 1</option>
+              <option value="2">Sesi 2</option>
+              <option value="3">Sesi 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="add-row">
+          <input type="text" id="newName-tengah" class="form-input"
+            placeholder="Nama anak baru..."
+            autocomplete="off" autocorrect="off" autocapitalize="words"
+            onkeydown="if(event.key==='Enter') addStudent('tengah')" />
+          <button class="btn btn-add" onclick="addStudent('tengah')" aria-label="Tambah siswa">
+            ➕ Tambah
+          </button>
+        </div>
+
+        <div class="attendance-hint" id="hint-tengah"></div>
+        <div class="progress-wrap" id="progress-wrap-tengah" style="display:none">
+          <div class="progress-label">
+            <span>Kehadiran</span>
+            <strong id="progress-text-tengah">0 / 0</strong>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill-tengah" style="width:0%"></div>
+          </div>
+        </div>
+        <!-- Search bar -->
+        <div class="student-search-wrap">
+          <span class="student-search-icon">🔍</span>
+          <input type="text" id="search-input-tengah" class="student-search-input"
+                 placeholder="Cari nama anak…"
+                 autocomplete="off" autocorrect="off"
+                 oninput="applySearch('tengah', this.value)" />
+          <button class="student-search-clear hidden" id="search-clear-tengah"
+                  onclick="clearSearch('tengah')" aria-label="Hapus pencarian">✕</button>
+        </div>
+
+        <!-- Skeleton loader -->
+        <div class="skeleton-list" id="skeleton-tengah">
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w85"></div><div class="skeleton-line w50"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w60"></div><div class="skeleton-line w35"></div></div></div>
+        </div>
+        <div class="student-list" id="list-tengah" aria-label="Daftar siswa kelas tengah"></div>
+        <div class="summary-bar" id="summary-tengah"></div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="submitAbsensi('tengah')">💾 Simpan Absensi</button>
+        </div>
+        <hr class="action-divider">
+        <div class="action-row">
+          <button class="btn btn-ghost" onclick="selectAll('tengah')">✅ Semua Hadir</button>
+          <button class="btn btn-ghost" onclick="clearAll('tengah')">✖ Reset Semua</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PANEL BESAR ===== -->
+    <section class="panel" id="panel-besar" role="tabpanel" aria-labelledby="tab-besar">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge besar-badge" aria-hidden="true">⭐</div>
+          <div>
+            <h2>Kelas Besar</h2>
+            <p>Usia 10+ Tahun</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date-besar">📅 Tanggal Ibadah</label>
+            <input type="date" id="date-besar" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label for="sesi-besar">🕐 Sesi</label>
+            <select id="sesi-besar" class="form-input">
+              <option value="1">Sesi 1</option>
+              <option value="2">Sesi 2</option>
+              <option value="3">Sesi 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="add-row">
+          <input type="text" id="newName-besar" class="form-input"
+            placeholder="Nama anak baru..."
+            autocomplete="off" autocorrect="off" autocapitalize="words"
+            onkeydown="if(event.key==='Enter') addStudent('besar')" />
+          <button class="btn btn-add" onclick="addStudent('besar')" aria-label="Tambah siswa">
+            ➕ Tambah
+          </button>
+        </div>
+
+        <div class="attendance-hint" id="hint-besar"></div>
+        <div class="progress-wrap" id="progress-wrap-besar" style="display:none">
+          <div class="progress-label">
+            <span>Kehadiran</span>
+            <strong id="progress-text-besar">0 / 0</strong>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill-besar" style="width:0%"></div>
+          </div>
+        </div>
+        <!-- Search bar -->
+        <div class="student-search-wrap">
+          <span class="student-search-icon">🔍</span>
+          <input type="text" id="search-input-besar" class="student-search-input"
+                 placeholder="Cari nama anak…"
+                 autocomplete="off" autocorrect="off"
+                 oninput="applySearch('besar', this.value)" />
+          <button class="student-search-clear hidden" id="search-clear-besar"
+                  onclick="clearSearch('besar')" aria-label="Hapus pencarian">✕</button>
+        </div>
+
+        <!-- Skeleton loader -->
+        <div class="skeleton-list" id="skeleton-besar">
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w85"></div><div class="skeleton-line w50"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w60"></div><div class="skeleton-line w35"></div></div></div>
+        </div>
+        <div class="student-list" id="list-besar" aria-label="Daftar siswa kelas besar"></div>
+        <div class="summary-bar" id="summary-besar"></div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="submitAbsensi('besar')">💾 Simpan Absensi</button>
+        </div>
+        <hr class="action-divider">
+        <div class="action-row">
+          <button class="btn btn-ghost" onclick="selectAll('besar')">✅ Semua Hadir</button>
+          <button class="btn btn-ghost" onclick="clearAll('besar')">✖ Reset Semua</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PANEL KAKAK ===== -->
+    <section class="panel" id="panel-kakak" role="tabpanel" aria-labelledby="tab-kakak">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge kakak-badge" aria-hidden="true">👑</div>
+          <div>
+            <h2>Kakak Sekming</h2>
+            <p>Kakak Sekolah Minggu</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date-kakak">📅 Tanggal Ibadah</label>
+            <input type="date" id="date-kakak" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label for="sesi-kakak">🕐 Sesi</label>
+            <select id="sesi-kakak" class="form-input">
+              <option value="1">Sesi 1</option>
+              <option value="2">Sesi 2</option>
+              <option value="3">Sesi 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="add-row">
+          <input type="text" id="newName-kakak" class="form-input"
+            placeholder="Nama kakak baru..."
+            autocomplete="off" autocorrect="off" autocapitalize="words"
+            onkeydown="if(event.key==='Enter') addStudent('kakak')" />
+          <button class="btn btn-add" onclick="addStudent('kakak')" aria-label="Tambah kakak">
+            ➕ Tambah
+          </button>
+        </div>
+
+        <div class="attendance-hint" id="hint-kakak"></div>
+        <div class="progress-wrap" id="progress-wrap-kakak" style="display:none">
+          <div class="progress-label">
+            <span>Kehadiran</span>
+            <strong id="progress-text-kakak">0 / 0</strong>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill-kakak" style="width:0%"></div>
+          </div>
+        </div>
+        <!-- Search bar -->
+        <div class="student-search-wrap">
+          <span class="student-search-icon">🔍</span>
+          <input type="text" id="search-input-kakak" class="student-search-input"
+                 placeholder="Cari nama kakak…"
+                 autocomplete="off" autocorrect="off"
+                 oninput="applySearch('kakak', this.value)" />
+          <button class="student-search-clear hidden" id="search-clear-kakak"
+                  onclick="clearSearch('kakak')" aria-label="Hapus pencarian">✕</button>
+        </div>
+
+        <!-- Skeleton loader -->
+        <div class="skeleton-list" id="skeleton-kakak">
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w85"></div><div class="skeleton-line w50"></div></div></div>
+          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w60"></div><div class="skeleton-line w35"></div></div></div>
+        </div>
+        <div class="student-list" id="list-kakak" aria-label="Daftar kakak sekolah minggu"></div>
+        <div class="summary-bar" id="summary-kakak"></div>
+
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="submitAbsensi('kakak')">💾 Simpan Absensi</button>
+        </div>
+        <hr class="action-divider">
+        <div class="action-row">
+          <button class="btn btn-ghost" onclick="selectAll('kakak')">✅ Semua Hadir</button>
+          <button class="btn btn-ghost" onclick="clearAll('kakak')">✖ Reset Semua</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PANEL REKAP ===== -->
+    <section class="panel" id="panel-rekap" role="tabpanel" aria-labelledby="tab-rekap">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge rekap-badge" aria-hidden="true">📊</div>
+          <div>
+            <h2>Rekap Kehadiran</h2>
+            <p>Laporan Bulanan</p>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="rekap-filter-card">
+          <div class="rekap-filter-row">
+            <div class="rekap-filter-group">
+              <label class="rekap-filter-label">📅 Dari Bulan</label>
+              <select id="rekap-dari" class="form-input" aria-label="Dari bulan"></select>
+            </div>
+            <div class="rekap-filter-sep">—</div>
+            <div class="rekap-filter-group">
+              <label class="rekap-filter-label">📅 Sampai Bulan</label>
+              <select id="rekap-sampai" class="form-input" aria-label="Sampai bulan"></select>
+            </div>
+          </div>
+          <div class="rekap-filter-row">
+            <div class="rekap-filter-group" style="flex:1">
+              <label class="rekap-filter-label">🕐 Filter Sesi</label>
+              <select id="rekap-sesi" class="form-input" aria-label="Filter sesi">
+                <option value="">Semua Sesi</option>
+                <option value="1">Sesi 1</option>
+                <option value="2">Sesi 2</option>
+                <option value="3">Sesi 3</option>
+              </select>
+            </div>
+          </div>
+          <div class="rekap-filter-actions">
+            <button class="btn btn-primary" onclick="loadRekap()">🔍 Tampilkan</button>
+            <button class="btn btn-outline" onclick="openExportModal()">⬇ Export</button>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div id="rekap-charts" style="display:none">
+          <div class="chart-tabs">
+            <button class="chart-tab active" onclick="switchChart('bar', this)">📊 Per Tanggal</button>
+            <button class="chart-tab" onclick="switchChart('line', this)">📈 Trend</button>
+            <button class="chart-tab" onclick="switchChart('pie', this)">🍩 Per Kelas</button>
+          </div>
+          <div class="chart-wrap" id="chart-bar-wrap">
+            <canvas id="chartBar"></canvas>
+          </div>
+          <div class="chart-wrap" id="chart-line-wrap" style="display:none">
+            <canvas id="chartLine"></canvas>
+          </div>
+          <div class="chart-wrap chart-wrap-pie" id="chart-pie-wrap" style="display:none">
+            <canvas id="chartPie"></canvas>
+          </div>
+        </div>
+
+        <div id="rekap-content">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>Pilih rentang bulan dan klik <strong>Tampilkan</strong></p>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- 1. Setup -->
-    <div class="panel-card face-card">
-      <div class="face-sec-hdr">
-        <div class="face-sec-icon si-setup">⚙️</div>
-        <div>
-          <div class="face-sec-title">Info Ibadah</div>
-          <div class="face-sec-sub">Isi sebelum mulai scan</div>
-        </div>
-      </div>
-      <div class="face-setup-grid">
-        <div class="form-group">
-          <label for="inputDate">📅 Tanggal</label>
-          <input type="date" id="inputDate" class="form-input" />
-        </div>
-        <div class="form-group">
-          <label for="inputSesi">🕐 Sesi</label>
-          <select id="inputSesi" class="form-input">
-            <option value="1">Sesi 1</option>
-            <option value="2">Sesi 2</option>
-            <option value="3">Sesi 3</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="inputKelas">🏫 Kelas</label>
-          <select id="inputKelas" class="form-input">
-            <option value="semua">Semua Kelas</option>
-            <option value="kecil">🐣 Kecil</option>
-            <option value="tengah">🌿 Tengah</option>
-            <option value="besar">⭐ Besar</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2. Status AI -->
-    <div class="face-model-status face-ms-loading" id="modelStatus">
-      <div class="face-ms-dot"></div>
-      <span id="modelStatusText">Memuat model AI… (10–30 detik pertama kali)</span>
-    </div>
-
-    <!-- 3. Kamera -->
-    <div class="panel-card face-card">
-      <div class="face-sec-hdr">
-        <div class="face-sec-icon si-cam">📷</div>
-        <div>
-          <div class="face-sec-title">Kamera</div>
-          <div class="face-sec-sub">Arahkan wajah ke oval, lalu tekan Scan</div>
-        </div>
-      </div>
-
-      <div class="face-cam-wrap" id="cameraWrap">
-        <video id="videoEl" autoplay playsinline muted></video>
-        <canvas id="canvasEl"></canvas>
-
-        <div class="face-guide" aria-hidden="true">
-          <div class="face-oval" id="faceOval"></div>
-        </div>
-
-        <div class="face-flash" id="scanFlash"></div>
-        <div class="face-cam-status" id="camStatus">Kamera belum aktif</div>
-
-        <div class="face-cam-placeholder" id="camPlaceholder">
-          <div class="face-cam-ph-icon">📷</div>
-          <p>Tekan tombol di bawah<br>untuk aktifkan kamera</p>
-        </div>
-
-        <div class="face-processing" id="processingOverlay">
-          <div class="face-proc-spinner"></div>
-          <div class="face-proc-text">Mencocokkan wajah…</div>
-        </div>
-      </div>
-
-      <div class="face-btn-pair">
-        <button class="btn btn-ghost" id="btnCamera" onclick="toggleCamera()">
-          🎥 Aktifkan Kamera
-        </button>
-        <button class="btn btn-gold" id="btnScan" onclick="doScan()" disabled>
-          🔍 Scan Wajah
-        </button>
-      </div>
-    </div>
-
-    <!-- 4. Sudah Hadir -->
-    <div class="panel-card face-card">
-      <div class="face-sec-hdr">
-        <div class="face-sec-icon si-done">✅</div>
-        <div style="flex:1">
-          <div class="face-sec-title">
-            Simpan Absensi
-            <span class="face-badge face-badge-green" id="confirmedCount">0</span>
-          </div>
-          <div class="face-sec-sub">Absensi yang sudah dikonfirmasi kakak Sekming</div>
-        </div>
-      </div>
-      <div id="confirmedList">
-        <div class="face-empty">
-          <div class="face-empty-icon">👼</div>
-          <p>Belum ada yang dikonfirmasi</p>
-        </div>
-      </div>
-      <div class="face-save-section" id="saveSection" style="display:none">
-        <p class="face-save-note">💾 Simpan semua absensi yang dikonfirmasi ke Google Sheets</p>
-        <button class="btn btn-primary" id="btnSave" onclick="saveAllAttendance()">
-          💾 Simpan Absensi ke Sheets
-        </button>
-      </div>
-    </div>
+    </section>
 
   </main>
 
-  <!-- ══ MODAL: MATCH ══ -->
-  <div class="modal-overlay" id="matchModal" role="dialog" aria-modal="true" aria-label="Konfirmasi kecocokan wajah">
-    <div class="face-sheet">
-      <div class="face-sheet-handle"></div>
+  <footer class="site-footer">
+    <p>© 2026 Beloved Kids Cito &hearts; Melayani dengan Kasih</p>
+  </footer>
 
-      <div class="face-match-preview">
-        <div class="face-match-imgs">
-          <div class="face-mfi-wrap">
-            <div class="face-mfi-lbl">📷 Hasil Scan</div>
-            <div class="face-mfi face-mfi-hl" id="mfiScan">
-              <canvas id="capturedCanvas" width="96" height="96"></canvas>
-            </div>
-          </div>
-          <div class="face-match-arrow">≈</div>
-          <div class="face-mfi-wrap">
-            <div class="face-mfi-lbl">📁 Foto Profil</div>
-            <div class="face-mfi" id="mfiProfil">?</div>
-          </div>
-        </div>
-        <div class="face-match-name" id="modalNama">—</div>
-        <div class="face-match-meta" id="modalMeta">—</div>
-        <span class="face-conf-badge" id="modalConf">—</span>
-      </div>
-
-      <hr class="face-divider" />
-
-      <div class="face-warn">
-        <span>⚠️</span>
-        <span>Pastikan foto scan dan foto profil adalah anak yang sama sebelum konfirmasi.</span>
-      </div>
-
-      <div class="face-modal-actions">
-        <button class="btn btn-primary" onclick="confirmMatch(true)">
-          ✅ Ya, Ini Benar — Tandai Hadir
-        </button>
-        <button class="btn btn-ghost" onclick="confirmMatch(false)">
-          ✕ Bukan Dia — Tolak
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ MODAL: NO MATCH ══ -->
-  <div class="modal-overlay" id="noMatchModal" role="dialog" aria-modal="true" aria-label="Wajah tidak dikenali">
-    <div class="face-sheet">
-      <div class="face-sheet-handle"></div>
-      <div class="face-nomatch-icon">🤷</div>
-      <div class="face-nomatch-title">Wajah Tidak Dikenali</div>
-      <div class="face-nomatch-sub">
-        Sistem tidak menemukan kecocokan di data.<br>
-        Kemungkinan anak belum punya foto profil, atau pencahayaan terlalu berbeda.
-      </div>
-
-      <div class="face-nomatch-choices">
-        <button class="face-choice-btn" id="btnChoiceAddNew" onclick="openAddStudentModal()">
-          <div class="face-choice-icon">➕</div>
-          <div class="face-choice-body">
-            <div class="face-choice-label">Tambah Anak Baru</div>
-            <div class="face-choice-sub">Daftarkan anak yang belum ada di daftar</div>
-          </div>
-          <div class="face-choice-arrow">›</div>
-        </button>
-        <button class="face-choice-btn" id="btnChoiceAssignPhoto" onclick="openAssignPhotoModal()">
-          <div class="face-choice-icon">📸</div>
-          <div class="face-choice-body">
-            <div class="face-choice-label">Tambahkan Foto Profil</div>
-            <div class="face-choice-sub">Pilih anak yang sudah ada, upload foto wajahnya</div>
-          </div>
-          <div class="face-choice-arrow">›</div>
-        </button>
-      </div>
-
-      <button class="btn btn-ghost" style="margin-top:10px" onclick="closeNoMatchModal()">🔄 Coba Scan Lagi</button>
-    </div>
-  </div>
-
-  <!-- ══ MODAL: TAMBAH ANAK BARU ══ -->
-  <div class="modal-overlay" id="addStudentModal" role="dialog" aria-modal="true" aria-label="Tambah anak baru">
-    <div class="face-sheet">
-      <div class="face-sheet-handle"></div>
-      <div class="face-modal-header">
-        <div class="face-modal-hd-icon">➕</div>
-        <div>
-          <div class="face-modal-hd-title">Tambah Anak Baru</div>
-          <div class="face-modal-hd-sub">Data akan langsung disimpan ke Google Sheets</div>
-        </div>
-      </div>
-
-      <div class="face-form-group">
-        <label for="addStuName">Nama Anak</label>
-        <input type="text" id="addStuName" class="form-input"
-               placeholder="Ketik nama lengkap…"
-               autocomplete="off" autocapitalize="words"
-               onkeydown="if(event.key==='Enter') submitAddStudent()" />
-      </div>
-
-      <div class="face-form-group">
-        <label for="addStuKelas">Kelas</label>
-        <select id="addStuKelas" class="form-input">
-          <option value="kecil">🐣 Kelas Kecil (3–6 thn)</option>
-          <option value="tengah">🌿 Kelas Tengah (7–9 thn)</option>
-          <option value="besar">⭐ Kelas Besar (10+ thn)</option>
-        </select>
-      </div>
-
-      <div class="face-modal-actions" style="margin-top:18px">
-        <button class="btn btn-primary" id="btnSubmitAddStudent" onclick="submitAddStudent()">
-          ➕ Tambah Anak
-        </button>
-        <button class="btn btn-ghost" onclick="closeAddStudentModal()">Batal</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ MODAL: ASSIGN FOTO KE ANAK YANG ADA ══ -->
-  <div class="modal-overlay" id="assignPhotoModal" role="dialog" aria-modal="true" aria-label="Pilih anak untuk foto">
-    <div class="face-sheet face-sheet-tall">
-      <div class="face-sheet-handle"></div>
-      <div class="face-modal-header">
-        <div class="face-modal-hd-icon">📸</div>
-        <div>
-          <div class="face-modal-hd-title">Pilih Anak</div>
-          <div class="face-modal-hd-sub">Cari anak lalu upload foto profil wajahnya</div>
-        </div>
-      </div>
-
-      <!-- Search -->
-      <div class="face-search-wrap">
-        <span class="face-search-icon">🔍</span>
-        <input type="text" id="assignSearchInput" class="face-search-input"
-               placeholder="Cari nama anak…"
-               autocomplete="off" autocorrect="off"
-               oninput="filterAssignList(this.value)" />
-      </div>
-
-      <!-- Student list -->
-      <div class="face-assign-list" id="assignStudentList">
-        <!-- populated by JS -->
-      </div>
-
-      <button class="btn btn-ghost" style="margin-top:12px" onclick="closeAssignPhotoModal()">Tutup</button>
-    </div>
-  </div>
-
-  <!-- Hidden file input for assign photo -->
-  <input type="file" id="assignFotoInput" accept="image/jpeg,image/png,image/webp"
-         style="display:none" onchange="handleAssignFotoUpload(event)" />
-
-  <!-- ══ HELP MODAL ══ -->
+  <!-- HELP MODAL -->
   <div class="modal-overlay" id="helpModal" onclick="if(event.target===this)closeHelp()">
-    <div class="modal-box help-modal-box" role="dialog" aria-modal="true" aria-label="Panduan Absensi Wajah">
+    <div class="modal-box help-modal-box" role="dialog" aria-modal="true" aria-label="Panduan Penggunaan">
 
       <div class="help-header">
         <div class="help-header-text">
           <div class="help-icon">📖</div>
           <div>
-            <h3 class="modal-title">Panduan Absensi Wajah</h3>
-            <p class="modal-sub">Face Recognition · Beloved Kids Cito</p>
+            <h3 class="modal-title">Panduan Penggunaan</h3>
+            <p class="modal-sub">Beloved Kids Cito</p>
           </div>
         </div>
         <button class="modal-close" onclick="closeHelp()" aria-label="Tutup">✕</button>
       </div>
 
+      <!-- Tab navigasi bantuan -->
       <div class="help-tabs">
-        <button class="help-tab active" onclick="switchHelp('cara-pakai', this)">📷 Cara Pakai</button>
-        <button class="help-tab" onclick="switchHelp('foto', this)">🖼 Foto Profil</button>
-        <button class="help-tab" onclick="switchHelp('tips', this)">💡 Tips & FAQ</button>
+        <button class="help-tab active" onclick="switchHelp('absensi', this)">✏️ Absensi</button>
+        <button class="help-tab" onclick="switchHelp('siswa', this)">👦 Siswa</button>
+        <button class="help-tab" onclick="switchHelp('rekap', this)">📊 Rekap</button>
+        <button class="help-tab" onclick="switchHelp('tips', this)">💡 Tips</button>
       </div>
 
       <div class="help-content">
 
-        <!-- ── Panel: Cara Pakai ── -->
-        <div class="help-panel active" id="help-cara-pakai">
+        <!-- Panel: Absensi -->
+        <div class="help-panel active" id="help-absensi">
           <div class="help-section">
-            <p class="help-lead">Cara scan wajah untuk absensi otomatis dalam 5 langkah.</p>
+            <p class="help-lead">Cara mengisi absensi harian dalam 4 langkah mudah.</p>
 
             <div class="help-step">
               <div class="help-step-num">1</div>
               <div>
-                <div class="help-step-title">Isi Info Ibadah</div>
-                <div class="help-step-desc">Pastikan <strong>Tanggal</strong>, <strong>Sesi</strong>, dan <strong>Kelas</strong> sudah benar sebelum mulai scan. Filter kelas mempersempit pencarian sehingga hasil lebih akurat dan cepat.</div>
+                <div class="help-step-title">Pilih Tanggal & Sesi</div>
+                <div class="help-step-desc">Pastikan tanggal ibadah dan sesi sudah benar sebelum mulai menandai kehadiran.</div>
               </div>
             </div>
-
             <div class="help-step">
               <div class="help-step-num">2</div>
               <div>
-                <div class="help-step-title">Aktifkan Kamera</div>
-                <div class="help-step-desc">Tekan tombol <strong>🎥 Aktifkan Kamera</strong>. Izinkan akses kamera saat browser meminta. Oval kuning akan muncul sebagai panduan posisi wajah. Oval berubah <strong>hijau</strong> otomatis saat wajah terdeteksi.</div>
+                <div class="help-step-title">Ketuk Nama Anak</div>
+                <div class="help-step-desc">Ketuk kartu nama untuk menandai <strong>Hadir</strong> — kartu berubah warna. Ketuk lagi untuk membatalkan.</div>
               </div>
             </div>
-
             <div class="help-step">
               <div class="help-step-num">3</div>
               <div>
-                <div class="help-step-title">Scan Wajah</div>
-                <div class="help-step-desc">Arahkan wajah anak ke dalam oval hingga oval hijau, lalu tekan <strong>🔍 Scan Wajah</strong>. Sistem otomatis mencocokkan wajah dengan foto profil yang ada di data.</div>
+                <div class="help-step-title">Gunakan Shortcut (Opsional)</div>
+                <div class="help-step-desc"><strong>Semua Hadir</strong> — tandai semua sekaligus. <strong>Reset Semua</strong> — batalkan semua tanda.</div>
               </div>
             </div>
-
             <div class="help-step">
               <div class="help-step-num">4</div>
               <div>
-                <div class="help-step-title">Konfirmasi Hasil — Wajib!</div>
-                <div class="help-step-desc">Muncul popup perbandingan foto scan vs foto profil beserta persentase kecocokan. Kakak Sekming harus tekan <strong>✅ Ya, Ini Benar</strong> atau <strong>✕ Bukan Dia</strong> — sistem tidak akan langsung catat tanpa konfirmasi.</div>
-              </div>
-            </div>
-
-            <div class="help-step">
-              <div class="help-step-num">5</div>
-              <div>
-                <div class="help-step-title">Simpan ke Sheets</div>
-                <div class="help-step-desc">Setelah semua anak di-scan dan dikonfirmasi, tekan <strong>💾 Simpan Absensi ke Sheets</strong> di bagian bawah. Ini langkah wajib — data belum tersimpan sebelum tombol ini ditekan!</div>
+                <div class="help-step-title">Simpan Absensi</div>
+                <div class="help-step-desc">Ketuk <strong>Simpan Absensi</strong>. Jika ada anak yang sudah pernah diabsen di sesi ini, akan muncul konfirmasi sebelum data ditimpa.</div>
               </div>
             </div>
 
             <div class="help-note">
-              <span class="help-note-icon">⚠️</span>
-              <span>Jangan tutup halaman sebelum menekan <strong>Simpan Absensi</strong> — semua data konfirmasi akan hilang.</span>
+              <span class="help-note-icon">💡</span>
+              <span>Satu anak bisa hadir di lebih dari satu sesi di hari yang sama — data tiap sesi tersimpan terpisah.</span>
             </div>
           </div>
         </div>
 
-        <!-- ── Panel: Foto Profil ── -->
-        <div class="help-panel" id="help-foto">
+        <!-- ════════════════════════════════════
+             Panel: Siswa
+             ════════════════════════════════════ -->
+        <div class="help-panel" id="help-siswa">
           <div class="help-section">
-            <p class="help-lead">Foto profil adalah kunci akurasi — berikut cara kelolaannya.</p>
+            <p class="help-lead">Kelola daftar anak — tambah, edit, foto, hapus.</p>
 
             <div class="help-item">
               <div class="help-item-icon">➕</div>
               <div>
-                <div class="help-item-title">Anak Belum Terdeteksi?</div>
-                <div class="help-item-desc">Kalau scan tidak menemukan kecocokan, muncul pilihan: <strong>Tambah Anak Baru</strong> (daftarkan anak baru langsung di sini) atau <strong>Tambahkan Foto Profil</strong> (pilih anak yang sudah ada di daftar lalu upload fotonya).</div>
-              </div>
-            </div>
-
-            <div class="help-item">
-              <div class="help-item-icon">📸</div>
-              <div>
-                <div class="help-item-title">Standar Foto yang Bagus</div>
-                <div class="help-item-desc">Gunakan foto <strong>wajah close-up</strong>, pencahayaan merata, tidak pakai masker atau kacamata gelap. Satu wajah per foto. Kondisi foto yang mirip dengan kondisi saat scan akan menghasilkan akurasi lebih tinggi.</div>
+                <div class="help-item-title">Tambah Anak Baru</div>
+                <div class="help-item-desc">Ketik nama di kolom <em>"Nama anak baru..."</em> lalu tap <strong>Tambah</strong> atau tekan Enter. Nama langsung tersimpan ke Google Sheets.</div>
               </div>
             </div>
 
             <div class="help-item">
               <div class="help-item-icon">✎</div>
               <div>
-                <div class="help-item-title">Edit Foto Lewat Halaman Utama</div>
-                <div class="help-item-desc">Foto juga bisa dikelola dari halaman Absensi utama: tap <strong>✎</strong> di kartu anak → scroll ke bagian Foto Anak → tap area upload atau tap <em>🗑 Hapus foto</em>. Perubahan langsung sync ke semua perangkat.</div>
+                <div class="help-item-title">Edit Nama / Pindah Kelas</div>
+                <div class="help-item-desc">Tap tombol <strong>✎</strong> di kartu anak untuk ubah nama atau pindahkan ke kelas lain. Riwayat absensi di kelas lama tetap aman.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">📷</div>
+              <div>
+                <div class="help-item-title">Tambah Foto Wajah</div>
+                <div class="help-item-desc">Di modal Edit, scroll ke bagian <strong>Foto Anak</strong> → tap area 📷 → pilih dari kamera atau galeri. Foto otomatis di-resize &amp; diupload ke <strong>GitHub Repo</strong>, lalu muncul di avatar semua HP yang buka app. Tap <em>🗑 Hapus foto</em> untuk menghapusnya.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">✕</div>
+              <div>
+                <div class="help-item-title">Hapus Anak</div>
+                <div class="help-item-desc">Tap tombol <strong>✕</strong> di kartu anak. Muncul konfirmasi sebelum data dihapus. Foto di Drive ikut dihapus otomatis.</div>
               </div>
             </div>
 
             <div class="help-note">
-              <span class="help-note-icon">💡</span>
-              <span>Model AI perlu <strong>10–30 detik</strong> loading pertama kali (butuh internet). Setelah itu scan berlangsung cepat selama halaman masih terbuka.</span>
+              <span class="help-note-icon">📦</span>
+              <span>Saat anak dipindah kelas, riwayat absensi di kelas lama <strong>tidak hilang</strong> — tetap tersimpan di sheet Absensi.</span>
             </div>
           </div>
         </div>
 
-        <!-- ── Panel: Tips & FAQ ── -->
+<!-- ════════════════════════════════════
+             Panel: Rekap
+             ════════════════════════════════════ -->
+        <div class="help-panel" id="help-rekap">
+          <div class="help-section">
+            <p class="help-lead">Laporan kehadiran lintas bulan lengkap dengan grafik.</p>
+
+            <div class="help-step">
+              <div class="help-step-num">1</div>
+              <div>
+                <div class="help-step-title">Pilih Range Bulan</div>
+                <div class="help-step-desc">Tentukan periode <strong>Dari</strong> dan <strong>Sampai</strong> — bisa satu bulan atau beberapa bulan sekaligus (maks 24 bulan ke belakang). Default otomatis 3 bulan terakhir.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">2</div>
+              <div>
+                <div class="help-step-title">Filter Sesi (Opsional)</div>
+                <div class="help-step-desc">Pilih Sesi 1 / 2 / 3 untuk rekap sesi tertentu, atau biarkan <em>Semua Sesi</em> untuk rekap gabungan.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">3</div>
+              <div>
+                <div class="help-step-title">Lihat Grafik Statistik</div>
+                <div class="help-step-desc">Setelah data dimuat, muncul grafik otomatis. Switch tampilan: <strong>Bar</strong> (perbandingan per bulan), <strong>Tren</strong> (garis termasuk total), <strong>Pie</strong> (proporsi per kelas).</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">4</div>
+              <div>
+                <div class="help-step-title">Tabel Detail &amp; Export</div>
+                <div class="help-step-desc">Tap baris di tabel untuk lihat nama anak yang hadir di sesi itu. Tap <strong>⬇ Export</strong> untuk unduh data sebagai <strong>CSV</strong>, <strong>Excel (.xlsx)</strong>, atau <strong>PDF</strong>.</div>
+              </div>
+            </div>
+
+            <div class="help-note">
+              <span class="help-note-icon">📊</span>
+              <span>Rekap hanya menampilkan anak yang <strong>Hadir</strong> — anak yang absen tidak dihitung.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════
+             Panel: Tips
+             ════════════════════════════════════ -->
         <div class="help-panel" id="help-tips">
           <div class="help-section">
-            <p class="help-lead">Pertanyaan umum & tips biar makin sat set.</p>
+            <p class="help-lead">Tips biar makin sat set.</p>
 
             <div class="help-item">
-              <div class="help-item-icon">🟡</div>
+              <div class="help-item-icon">📱</div>
               <div>
-                <div class="help-item-title">Arti Warna Badge Kecocokan</div>
-                <div class="help-item-desc"><strong>🟢 Akurasi Tinggi</strong> — sistem sangat yakin ini wajah yang sama. <strong>🟡 Cukup Yakin</strong> — ada kecocokan tapi kurang kuat, perhatikan lebih teliti sebelum konfirmasi. Selalu bandingkan kedua foto sebelum tekan Hadir.</div>
+                <div class="help-item-title">Pasang di Home Screen HP</div>
+                <div class="help-item-desc"><strong>iPhone:</strong> Safari → tombol Share → "Add to Home Screen". <strong>Android:</strong> Chrome → menu ⋮ → "Tambahkan ke layar utama". Bisa langsung dibuka kayak aplikasi, tanpa buka browser dulu!</div>
               </div>
             </div>
 
             <div class="help-item">
-              <div class="help-item-icon">💡</div>
+              <div class="help-item-icon">📷</div>
               <div>
-                <div class="help-item-title">Akurasi Rendah?</div>
-                <div class="help-item-desc">Coba: pastikan <strong>pencahayaan cukup</strong>, wajah tidak terpotong, kamera tidak terlalu jauh. Kalau tetap meleset, update foto profil anak dengan foto yang lebih baru dan kondisi lebih mirip dengan tempat ibadah.</div>
+                <div class="help-item-title">Tips Foto Anak</div>
+                <div class="help-item-desc">Pakai foto wajah close-up supaya mudah dikenali di avatar kecil. Foto di-resize otomatis ke 300px — tidak perlu kompres dulu. Foto tersimpan di Google Drive dan sync ke semua HP.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">🌐</div>
+              <div>
+                <div class="help-item-title">Perlu Koneksi Internet</div>
+                <div class="help-item-desc">Semua data disimpan ke Google Sheets &amp; Drive — koneksi internet wajib ada. Upload foto butuh koneksi lebih stabil karena ukuran datanya lebih besar.</div>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <div class="help-item-icon">⚠️</div>
+              <div>
+                <div class="help-item-title">Absensi Ditimpa?</div>
+                <div class="help-item-desc">Kalau simpan absensi di tanggal + sesi + kelas yang sama lebih dari sekali, data lama diganti dengan yang baru. Kalau 0 hadir, muncul konfirmasi dulu sebelum simpan.</div>
               </div>
             </div>
 
             <div class="help-item">
               <div class="help-item-icon">🔄</div>
               <div>
-                <div class="help-item-title">Model AI Gagal Loading?</div>
-                <div class="help-item-desc">Cek koneksi internet dan refresh halaman. Model (~6MB) didownload dari CDN — butuh koneksi stabil pertama kali. Setelah berhasil sekali, browser biasanya cache model sehingga loading berikutnya lebih cepat.</div>
+                <div class="help-item-title">Daftar Kosong / Error?</div>
+                <div class="help-item-desc">Refresh halaman dan cek koneksi. Kalau foto gagal upload, coba lagi — ukuran file maks 5MB. Masih error? Hubungi koordinator atau admin gereja.</div>
               </div>
             </div>
 
-            <div class="help-item">
-              <div class="help-item-icon">👥</div>
-              <div>
-                <div class="help-item-title">Bisa Dipakai Bersamaan?</div>
-                <div class="help-item-desc">Bisa — buka di beberapa HP sekaligus. Tapi pastikan tidak simpan absensi <strong>kelas + sesi + tanggal yang sama</strong> dari dua perangkat bersamaan karena data bisa tertimpa.</div>
-              </div>
-            </div>
-
-            <div class="help-item">
-              <div class="help-item-icon">⏱</div>
-              <div>
-                <div class="help-item-title">Berapa Lama Proses Scan?</div>
-                <div class="help-item-desc">Deteksi wajah sekitar <strong>1–3 detik</strong> per anak. Loading descriptor wajah dari semua foto profil dilakukan di background saat halaman pertama dibuka — makin banyak anak, makin lama persiapannya (biasanya 10–30 detik).</div>
-              </div>
-            </div>
-
-            <div class="help-note">
-              <span class="help-note-icon">🌐</span>
-              <span>Halaman ini butuh <strong>koneksi internet</strong> untuk load model AI dan data siswa dari Sheets. Setelah data termuat, scan bisa tetap jalan walau koneksi putus sesaat — tapi simpan ke Sheets butuh internet kembali.</span>
-            </div>
           </div>
         </div>
 
@@ -486,6 +762,146 @@
     </div>
   </div>
 
-  <script src="face.js"></script>
+  <!-- CONFIRM MODAL -->
+  <div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)closeConfirmModal()">
+    <div class="modal-box confirm-modal-box" role="dialog" aria-modal="true">
+      <div class="confirm-icon-wrap" id="confirmModal-icon">⚠️</div>
+      <h3 class="confirm-title" id="confirmModal-title"></h3>
+      <div class="confirm-body" id="confirmModal-body"></div>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" id="confirmModal-cancel">Batal</button>
+        <button class="btn btn-primary confirm-btn-ok" id="confirmModal-ok"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT SISWA MODAL -->
+  <div class="modal-overlay" id="editModal" onclick="closeEditModal(event)">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Edit Siswa">
+      <div class="modal-header">
+        <div class="modal-icon" style="font-size:1.3rem">&#9998;</div>
+        <div>
+          <h3 class="modal-title">Edit Siswa</h3>
+          <p class="modal-sub" id="editModal-title"></p>
+        </div>
+        <button class="modal-close" onclick="closeEditModal()" aria-label="Tutup">&#x2715;</button>
+      </div>
+
+      <input type="hidden" id="editModal-origKelas" />
+      <input type="hidden" id="editModal-idx" />
+      <input type="hidden" id="editModal-id" />
+
+      <div class="edit-form">
+        <div class="form-group">
+          <label for="editModal-nama">Nama Anak</label>
+          <input type="text" id="editModal-nama" class="form-input"
+                 autocomplete="off" autocapitalize="words"
+                 onkeydown="if(event.key==='Enter') saveEditModal()" />
+        </div>
+
+        <div class="form-group">
+          <label for="editModal-kelas">Kelas</label>
+          <select id="editModal-kelas" class="form-input" onchange="toggleEditInfoBox()">
+            <option value="kecil">&#x1F423; Kelas Kecil (3&ndash;6 thn)</option>
+            <option value="tengah">&#x1F33F; Kelas Tengah (7&ndash;9 thn)</option>
+            <option value="besar">&#x2B50; Kelas Besar (10+ thn)</option>
+            <option value="kakak">&#x1F451; Kakak Sekming</option>
+          </select>
+        </div>
+
+        <div class="edit-info-box" id="editModal-infobox" style="display:none">
+          <span>&#x1F4E6;</span>
+          <span>Riwayat absensi lama tetap tersimpan di kelas sebelumnya.</span>
+        </div>
+
+        <!-- ── FOTO SECTION ── -->
+        <div class="form-group foto-group">
+          <label>Foto Anak <span class="label-opt">(sync ke GitHub)</span></label>
+
+          <!-- Current foto / upload area -->
+          <div class="foto-upload-area" id="fotoUploadArea"
+               onclick="document.getElementById('fotoFileInput').click()"
+               role="button" tabindex="0"
+               onkeydown="if(event.key==='Enter')document.getElementById('fotoFileInput').click()"
+               aria-label="Upload foto">
+            <img id="fotoPreview" class="foto-preview hidden" alt="Preview foto" />
+            <div class="foto-placeholder" id="fotoPlaceholder">
+              <span class="foto-icon">📷</span>
+              <span class="foto-hint">Ketuk untuk pilih foto</span>
+              <span class="foto-sub">JPG / PNG · auto-resize 300px</span>
+            </div>
+            <div class="foto-uploading hidden" id="fotoUploading">
+              <div class="foto-spinner"></div>
+              <span>Mengupload ke GitHub...</span>
+            </div>
+          </div>
+          <input type="file" id="fotoFileInput" accept="image/jpeg,image/png,image/webp"
+                 style="display:none" onchange="handleFotoUpload(event)" />
+
+          <button class="btn-remove-foto hidden" id="btnRemoveFoto"
+                  onclick="event.stopPropagation(); confirmRemoveFoto()">
+            🗑 Hapus foto
+          </button>
+        </div>
+      </div>
+
+      <div class="edit-actions">
+        <button class="btn btn-ghost" onclick="closeEditModal()">Batal</button>
+        <button class="btn btn-primary" id="btnSaveEdit" onclick="saveEditModal()" style="min-height:48px;width:auto;padding:12px 28px">
+          &#x1F4BE; Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT MODAL -->
+  <div class="modal-overlay" id="exportModal" onclick="closeExportModal(event)">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Pilih Format Export">
+      <div class="modal-header">
+        <div class="modal-icon">⬇</div>
+        <div>
+          <h3 class="modal-title">Export Rekap</h3>
+          <p class="modal-sub">Pilih format file yang kamu mau</p>
+        </div>
+        <button class="modal-close" onclick="closeExportModal()" aria-label="Tutup">✕</button>
+      </div>
+
+      <div class="export-options">
+        <button class="export-opt" onclick="exportCSV()">
+          <div class="export-opt-icon csv-icon">CSV</div>
+          <div class="export-opt-body">
+            <strong>CSV</strong>
+            <span>Comma Separated · cocok buat import ke Google Sheets / Excel manual</span>
+          </div>
+          <div class="export-opt-arrow">›</div>
+        </button>
+
+        <button class="export-opt" onclick="exportExcel()">
+          <div class="export-opt-icon xlsx-icon">XLS</div>
+          <div class="export-opt-body">
+            <strong>Excel (.xlsx)</strong>
+            <span>Langsung buka di Microsoft Excel atau Google Sheets</span>
+          </div>
+          <div class="export-opt-arrow">›</div>
+        </button>
+
+        <button class="export-opt" onclick="exportPDF()">
+          <div class="export-opt-icon pdf-icon">PDF</div>
+          <div class="export-opt-body">
+            <strong>PDF</strong>
+            <span>Siap cetak · rapi untuk laporan atau arsip</span>
+          </div>
+          <div class="export-opt-arrow">›</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden PDF print area -->
+  <div id="pdf-print-area" style="display:none"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
