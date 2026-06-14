@@ -7,10 +7,10 @@
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4AIeYtaSwb4q-2zWoELwer5R81k7qDkfFjSg8Uzt1iQ9r7Xs6jGS5RGEJhreTAWizOg/exec';
 
 const state = {
-  kecil:     { students: [], attendance: {} },
-  tengah:    { students: [], attendance: {} },
-  besar:     { students: [], attendance: {} },
-  kakak:     { students: [], attendance: {} },
+  kecil:     { students: [], attendance: {}, searchQuery: '' },
+  tengah:    { students: [], attendance: {}, searchQuery: '' },
+  besar:     { students: [], attendance: {}, searchQuery: '' },
+  kakak:     { students: [], attendance: {}, searchQuery: '' },
   rekapData: [],
 };
 
@@ -137,15 +137,11 @@ function switchTab(tab) {
   activeBtn.classList.add('active');
   activeBtn.setAttribute('aria-selected','true');
 
-  const searchWrap = document.getElementById('appSearchWrap');
-  if (searchWrap) {
-    searchWrap.style.display = tab === 'rekap' ? 'none' : 'flex';
-  }
-  if (tab !== 'rekap') {
-    clearSearch();
+  // Reset search query saat pindah tab
+  if (['kecil','tengah','besar','kakak'].includes(tab)) {
+    clearSearch(tab);
   }
 
-  // Scroll to top smoothly
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -189,45 +185,28 @@ async function loadSiswa() {
 /* ============================================================
    LIVE SEARCH
    ============================================================ */
-let appSearchQuery = '';
-
-function applySearch(q) {
-  appSearchQuery = q.trim().toLowerCase();
-  const clearBtn = document.getElementById('appSearchClear');
-  if (clearBtn) clearBtn.classList.toggle('hidden', !appSearchQuery);
-  
-  // Find which tab is active
-  const activeTab = ['kecil','tengah','besar','kakak'].find(t => {
-    const p = document.getElementById(`panel-${t}`);
-    return p && p.classList.contains('active');
-  });
-  if (activeTab) renderStudents(activeTab);
+function applySearch(kelas, q) {
+  state[kelas].searchQuery = q.trim().toLowerCase();
+  const clearBtn = document.getElementById(`search-clear-${kelas}`);
+  if (clearBtn) clearBtn.classList.toggle('hidden', !state[kelas].searchQuery);
+  renderStudents(kelas);
 }
 
-function clearSearch() {
-  appSearchQuery = '';
-  const input = document.getElementById('appSearchInput');
-  const clearBtn = document.getElementById('appSearchClear');
-  if (input) input.value = '';
+function clearSearch(kelas) {
+  state[kelas].searchQuery = '';
+  const input    = document.getElementById(`search-input-${kelas}`);
+  const clearBtn = document.getElementById(`search-clear-${kelas}`);
+  if (input)    input.value = '';
   if (clearBtn) clearBtn.classList.add('hidden');
-  
-  const activeTab = ['kecil','tengah','besar','kakak'].find(t => {
-    const p = document.getElementById(`panel-${t}`);
-    return p && p.classList.contains('active');
-  });
-  if (activeTab) renderStudents(activeTab);
-  
-  if (input && activeTab) input.focus();
+  renderStudents(kelas);
+  if (input) input.focus();
 }
 
-function highlightMatch(nama, query) {
-  if (!query) return escapeHtml(nama);
-  const escaped = escapeHtml(nama);
+function _highlightMatch(text, query) {
+  if (!query) return escapeHtml(text);
+  const safe = escapeHtml(text);
   const escapedQ = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return escaped.replace(
-    new RegExp(`(${escapedQ})`, 'gi'),
-    '<mark class="app-search-hl">$1</mark>'
-  );
+  return safe.replace(new RegExp(`(${escapedQ})`, 'gi'), '<mark class="search-hl">$1</mark>');
 }
 
 /* ============================================================
@@ -237,13 +216,13 @@ function renderStudents(kelas) {
   const listEl = document.getElementById(`list-${kelas}`);
   const hintEl = document.getElementById(`hint-${kelas}`);
   const s      = state[kelas];
+  const q      = s.searchQuery || '';
 
   const hadir = Object.values(s.attendance).filter(Boolean).length;
   const total = s.students.length;
   const pct   = total > 0 ? Math.round((hadir/total)*100) : 0;
 
   // Update live counter
-  // BUG-14 FIX: Gunakan kata yang sesuai untuk masing-masing kategori
   const label = kelas === 'kakak' ? 'kakak' : 'anak';
   if (hintEl && total > 0) {
     hintEl.textContent = `${hadir} dari ${total} ${label} hadir`;
@@ -271,32 +250,31 @@ function renderStudents(kelas) {
     return;
   }
 
-  // Filter students by search query
-  const filteredStudents = appSearchQuery 
-    ? s.students.filter(stu => stu.nama.toLowerCase().includes(appSearchQuery))
+  // Filter berdasarkan search query
+  const filtered = q
+    ? s.students.filter(stu => stu.nama.toLowerCase().includes(q))
     : s.students;
 
-  if (filteredStudents.length === 0) {
+  if (!filtered.length) {
     listEl.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">🔍</div>
-        <p>Tidak ada yang cocok dengan "<strong>${escapeHtml(appSearchQuery)}</strong>"</p>
+        <p>Tidak ada anak yang cocok<br>dengan "<strong>${escapeHtml(q)}</strong>"</p>
       </div>`;
     updateSummary(kelas);
     return;
   }
 
-  // BUG-15 FIX: Jangan pakai inline template di onerror untuk hindari XSS / broken HTML
-  // Gunakan data attribute + event delegation yang aman
-  listEl.innerHTML = filteredStudents.map((stu, i) => {
-    // We need the original index to pass to deleteStudent/openEditModal
-    const origIdx = s.students.findIndex(x => x.id === stu.id);
-    const isHadir = !!s.attendance[stu.id];
-    const initial = stu.nama.trim().charAt(0).toUpperCase();
-    const foto    = stu.fotoUrl || null;
+  listEl.innerHTML = filtered.map((stu, i) => {
+    // Index asli (untuk edit/delete) — tetap dari array students, bukan filtered
+    const origIdx  = s.students.indexOf(stu);
+    const isHadir  = !!s.attendance[stu.id];
+    const initial  = stu.nama.trim().charAt(0).toUpperCase();
+    const foto     = stu.fotoUrl || null;
     const avatarContent = foto
       ? `<img src="${foto}" alt="" class="avatar-img${isHadir?' hadir-dim':''}" data-fallback="${escapeHtml(initial)}" data-hadir="${isHadir}" />${isHadir?'<span class="avatar-check">✓</span>':''}`
       : (isHadir ? '✓' : initial);
+    const namaDisplay = _highlightMatch(stu.nama, q);
     return `
       <div class="student-item ${isHadir ? 'hadir' : ''}"
            onclick="toggleAttendance('${kelas}','${stu.id}')"
@@ -304,7 +282,7 @@ function renderStudents(kelas) {
            aria-label="${stu.nama} — ${isHadir ? 'Hadir' : 'Belum absen'}"
            onkeydown="if(event.key==='Enter'||event.key===' ')toggleAttendance('${kelas}','${stu.id}')">
         <div class="student-avatar${foto?' has-foto':''}" aria-hidden="true">${avatarContent}</div>
-        <div class="student-name">${highlightMatch(stu.nama, appSearchQuery)}</div>
+        <div class="student-name">${namaDisplay}</div>
         <div class="student-status">${isHadir ? '✓ Hadir' : '— Absen'}</div>
         <div class="student-actions">
           <button class="edit-btn"
