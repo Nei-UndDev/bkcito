@@ -4,904 +4,287 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#4A0A13" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Absensi Beloved Kids Cito</title>
+  <title>Under Maintenance - Beloved Kids Cito</title>
   <link rel="icon" type="image/x-icon" href="BK Cito.ico">
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+
   <style>
-    /* ── Live Search Bar (index.html) ── */
-    .student-search-wrap {
+    :root {
+      --maroon:       #7B1120;
+      --maroon-deep:  #4A0A13;
+      --maroon-light: #C0394A;
+      --gold:         #D4A017;
+      --gold-light:   #F0C842;
+      --cream:        #F5EDE6; 
+      --white:        #FBF6F3;
+      --text:         #2C1810;
+      --text-muted:   #A07060;
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body:    'Nunito', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
       display: flex;
       align-items: center;
-      gap: 9px;
-      background: #F0E8E2;
-      border: 1.5px solid rgba(123,17,32,0.10);
-      border-radius: 14px;
-      padding: 9px 13px;
-      margin-bottom: 10px;
-      transition: border-color 0.18s, box-shadow 0.18s;
+      justify-content: center;
+      padding: 20px;
+      overflow: hidden;
+      position: relative;
     }
-    .student-search-wrap:focus-within {
-      border-color: rgba(123,17,32,0.38);
-      box-shadow: 0 0 0 4px rgba(123,17,32,0.07);
-      background: white;
+
+    /* ---- BACKGROUND BUBBLES ---- */
+    .bg-bubbles {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0; overflow: hidden;
     }
-    .student-search-icon { font-size: 0.95rem; flex-shrink: 0; opacity: 0.45; }
-    .student-search-input {
-      flex: 1;
-      border: none;
-      background: transparent;
-      font-family: var(--font-body);
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text);
-      outline: none;
-      min-width: 0;
+    .bg-bubbles span {
+      position: absolute; border-radius: 50%; opacity: 0.04;
+      animation: floatBg 14s infinite ease-in-out;
     }
-    .student-search-input::placeholder { color: var(--text-muted); font-weight: 600; }
-    .student-search-clear {
-      width: 24px; height: 24px;
-      border: none;
-      background: rgba(123,17,32,0.08);
-      border-radius: 50%;
-      font-size: 0.65rem;
-      color: var(--text-mid);
-      cursor: pointer;
+    .bg-bubbles span:nth-child(1) { width: 300px; height: 300px; background: var(--maroon); top: -80px; left: -80px; animation-delay: 0s; }
+    .bg-bubbles span:nth-child(2) { width: 200px; height: 200px; background: var(--gold); top: 30%; right: -60px; animation-delay: 2.5s; }
+    .bg-bubbles span:nth-child(3) { width: 150px; height: 150px; background: var(--maroon-light); bottom: 15%; left: 5%; animation-delay: 5s; }
+    .bg-bubbles span:nth-child(4) { width: 240px; height: 240px; background: var(--gold); bottom: -60px; right: 15%; animation-delay: 1.2s; }
+    
+    @keyframes floatBg {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-28px) scale(1.05); }
+    }
+
+    /* ---- MAINTENANCE CARD ---- */
+    .maintenance-card {
+      position: relative;
+      z-index: 10;
+      background: var(--white);
+      max-width: 440px;
+      width: 100%;
+      border-radius: 24px;
+      padding: 40px 30px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(74, 10, 19, 0.08);
+      border: 1px solid rgba(123, 17, 32, 0.08);
+      animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .icon-wrap {
+      width: 84px; height: 84px;
+      margin: 0 auto 20px;
+      background: linear-gradient(145deg, #FFF0F2, #FFE4E8);
+      border: 2px solid rgba(123, 17, 32, 0.12);
+      border-radius: 20px;
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      transition: background 0.15s, transform 0.12s;
-      touch-action: manipulation;
+      font-size: 2.5rem;
+      box-shadow: 0 4px 16px rgba(123, 17, 32, 0.1);
+      animation: bounce 2s infinite ease-in-out;
     }
-    .student-search-clear:hover  { background: rgba(123,17,32,0.16); }
-    .student-search-clear:active { transform: scale(0.88); }
-    .student-search-clear.hidden { display: none; }
-    mark.search-hl {
-      background: rgba(212,160,23,0.30);
-      color: inherit;
-      border-radius: 3px;
-      padding: 0 1px;
-      font-weight: 900;
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
     }
+
+    h1 { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--maroon-deep); margin-bottom: 12px; line-height: 1.2; }
+    p { font-size: 0.95rem; color: var(--text-muted); font-weight: 600; line-height: 1.6; margin-bottom: 24px; }
+    p strong { color: var(--maroon); }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; border: none; border-radius: 14px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 800; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary { background: linear-gradient(145deg, var(--maroon), var(--maroon-light)); color: white; box-shadow: 0 5px 18px rgba(123, 17, 32, 0.35); margin-bottom: 12px; }
+    .btn-primary:hover { box-shadow: 0 8px 24px rgba(123, 17, 32, 0.45); transform: translateY(-2px); }
+    .btn-ghost { background: #F8F0EC; color: var(--text-muted); border: 2px solid rgba(123, 17, 32, 0.10); }
+    .btn-ghost:hover { background: #F0E4DC; border-color: rgba(123, 17, 32, 0.2); color: var(--maroon); }
+    .footer-text { margin-top: 24px; font-size: 0.75rem; color: rgba(160, 112, 96, 0.6); font-weight: 700; letter-spacing: 0.5px; }
+
+    @media (max-width: 480px) { .maintenance-card { padding: 32px 24px; } h1 { font-size: 1.5rem; } }
+
+    /* ============================================================
+       MASCOT PETEY PANDA (CHIBI PET)
+       ============================================================ */
+    .chibi-pet {
+      position: fixed;
+      bottom: 20px;
+      left: calc(100vw - 150px);
+      z-index: 9999;
+      animation: floatPanda 4s ease-in-out infinite; 
+      transition: left 0s linear; 
+    }
+
+    .chibi-pet img {
+      width: 180px;
+      height: auto;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .chibi-pet img:hover {
+      filter: drop-shadow(0 0 12px var(--gold-light)); 
+    }
+
+    @keyframes floatPanda {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .bubble-chat {
+      position: absolute;
+      top: -45px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gold);
+      color: var(--maroon-deep);
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-family: var(--font-body);
+      font-weight: 700;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      box-shadow: 0 4px 12px rgba(74,10,19,0.15);
+    }
+
+    .bubble-chat::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 5px 5px 0;
+      border-style: solid;
+      border-color: var(--gold) transparent transparent transparent;
+    }
+
+    .chibi-pet:hover .bubble-chat { opacity: 1; }
+    
+    @media (max-width: 480px) { .chibi-pet { bottom: 15px; } .chibi-pet img { width: 150px; } }
   </style>
 </head>
 <body>
 
+  <!-- Animasi Background -->
   <div class="bg-bubbles" aria-hidden="true">
-    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span>
   </div>
 
-  <!-- LOADING -->
-  <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite">
-    <div class="loading-mascot" aria-hidden="true">
-      <div class="loading-emoji" id="loadingEmoji">🐣</div>
-      <div class="loading-dots">
-        <span></span><span></span><span></span>
-      </div>
+  <!-- Main Card -->
+  <main class="maintenance-card">
+    <div class="icon-wrap">🛠️</div>
+    
+    <h1>Lagi Beres-beres!</h1>
+    
+    <p>
+      Sistem Absensi <strong>Beloved Kids Cito</strong> sedang dalam perbaikan rutin biar webnya makin <i>sat-set</i> dan nyaman dipake.
+      <br><br>
+      Tunggu sebentar ya, kita bakal balik lagi secepatnya!
+    </p>
+
+    <button class="btn btn-primary" onclick="window.location.reload()">
+      🔄 Coba Muat Ulang
+    </button>
+    <a href="https://wa.me/+6285607671130" class="btn btn-ghost">
+      📞 Hubungi Admin
+    </a>
+
+    <div class="footer-text">
+      © 2026 Beloved Kids Cito
     </div>
-    <p id="loadingMsg">Memuat data...</p>
-    <p class="loading-sub" id="loadingSub">Bentar ya, lagi ngambil daftar anak...</p>
-  </div>
-
-  <!-- TOAST -->
-  <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
-
-  <!-- HEADER -->
-  <header class="site-header">
-    <div class="header-inner">
-      <div class="logo-wrap">
-        <img src="BK Cito.jpeg" alt="Beloved Kids Cito" class="site-logo" />
-      </div>
-      <div class="header-text">
-        <div class="header-date" id="headerDate"></div>
-        <h1 class="header-title">Beloved Kids Cito</h1>
-        <p class="header-tagline">Sistem Absensi Jemaat Anak</p>
-      </div>
-      <button class="help-btn" onclick="openHelp()" aria-label="Panduan penggunaan">?</button>
-    </div>
-    <div class="header-ring" aria-hidden="true"></div>
-  </header>
-
-  <!-- MAIN -->
-  <main class="main-content">
-
-    <div class="config-banner hidden" id="config-banner">
-      <span>⚙️</span>
-      <div>Setup diperlukan! Isi <code>SPREADSHEET_ID</code>, <code>API_KEY</code>, dan <code>APPS_SCRIPT_URL</code> di <code>app.js</code>.</div>
-    </div>
-
-    <!-- TABS -->
-    <nav class="tab-nav" role="tablist" aria-label="Pilih Kelas">
-      <button class="tab-btn" id="tab-kecil"  role="tab" aria-selected="false" onclick="switchTab('kecil')" >
-        <span class="tab-icon" aria-hidden="true">🐣</span>
-        <span class="tab-label">Kecil</span>
-        <span class="tab-sub">3–6 thn</span>
-      </button>
-      <button class="tab-btn" id="tab-tengah" role="tab" aria-selected="false" onclick="switchTab('tengah')">
-        <span class="tab-icon" aria-hidden="true">🌿</span>
-        <span class="tab-label">Tengah</span>
-        <span class="tab-sub">7–9 thn</span>
-      </button>
-      <button class="tab-btn" id="tab-besar"  role="tab" aria-selected="false" onclick="switchTab('besar')" >
-        <span class="tab-icon" aria-hidden="true">⭐</span>
-        <span class="tab-label">Besar</span>
-        <span class="tab-sub">10+ thn</span>
-      </button>
-      <button class="tab-btn" id="tab-kakak"  role="tab" aria-selected="false" onclick="switchTab('kakak')" >
-        <span class="tab-icon" aria-hidden="true">👑</span>
-        <span class="tab-label">Kakak</span>
-        <span class="tab-sub">Sekming</span>
-      </button>
-      <button class="tab-btn" id="tab-rekap"  role="tab" aria-selected="false" onclick="switchTab('rekap')" >
-        <span class="tab-icon" aria-hidden="true">📊</span>
-        <span class="tab-label">Rekap</span>
-        <span class="tab-sub">Laporan</span>
-      </button>
-    </nav>
-
-    <!-- SHORTCUTS -->
-    <div class="shortcut-bar-row">
-      <a href="poin.html" class="poin-shortcut-btn">
-        <span>🏅</span>
-        <span>Lihat Papan Poin</span>
-        <span class="poin-shortcut-arrow">›</span>
-      </a>
-      <a href="face.html" class="face-shortcut-btn">
-        <span class="fsc-icon">📷</span>
-        <div class="fsc-text">
-          <div class="fsc-label">Absensi Wajah</div>
-          <div class="fsc-sub">Scan otomatis via AI</div>
-        </div>
-        <span class="fsc-arrow">›</span>
-      </a>
-    </div>
-
-    <!-- HINT BAR -->
-    <div class="hint-bar" id="hint-bar">
-      👆 Ketuk nama anak untuk tandai <strong>Hadir</strong> · Ketuk lagi untuk batalkan
-    </div>
-
-    <!-- ===== PANEL KECIL ===== -->
-    <section class="panel" id="panel-kecil" role="tabpanel" aria-labelledby="tab-kecil">
-      <div class="panel-card">
-        <div class="panel-header">
-          <div class="panel-badge kecil-badge" aria-hidden="true">🐣</div>
-          <div>
-            <h2>Kelas Kecil</h2>
-            <p>Usia 3–6 Tahun</p>
-          </div>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="date-kecil">📅 Tanggal Ibadah</label>
-            <input type="date" id="date-kecil" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label for="sesi-kecil">🕐 Sesi</label>
-            <select id="sesi-kecil" class="form-input">
-              <option value="1">Sesi 1</option>
-              <option value="2">Sesi 2</option>
-              <option value="3">Sesi 3</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="add-row">
-          <input type="text" id="newName-kecil" class="form-input"
-            placeholder="Nama anak baru..."
-            autocomplete="off" autocorrect="off" autocapitalize="words"
-            onkeydown="if(event.key==='Enter') addStudent('kecil')" />
-          <button class="btn btn-add" onclick="addStudent('kecil')" aria-label="Tambah siswa">
-            ➕ Tambah
-          </button>
-        </div>
-
-        <!-- Attendance counter badge -->
-        <div class="attendance-hint" id="hint-kecil"></div>
-        <div class="progress-wrap" id="progress-wrap-kecil" style="display:none">
-          <div class="progress-label">
-            <span>Kehadiran</span>
-            <strong id="progress-text-kecil">0 / 0</strong>
-          </div>
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" id="progress-fill-kecil" style="width:0%"></div>
-          </div>
-        </div>
-
-        <!-- Search bar -->
-        <div class="student-search-wrap">
-          <span class="student-search-icon">🔍</span>
-          <input type="text" id="search-input-kecil" class="student-search-input"
-                 placeholder="Cari nama anak…"
-                 autocomplete="off" autocorrect="off"
-                 oninput="applySearch('kecil', this.value)" />
-          <button class="student-search-clear hidden" id="search-clear-kecil"
-                  onclick="clearSearch('kecil')" aria-label="Hapus pencarian">✕</button>
-        </div>
-
-        <!-- Skeleton loader -->
-        <div class="skeleton-list" id="skeleton-kecil">
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div>
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w85"></div><div class="skeleton-line w50"></div></div></div>
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w60"></div><div class="skeleton-line w35"></div></div></div>
-        </div>
-        <div class="student-list" id="list-kecil" aria-label="Daftar siswa kelas kecil"></div>
-        <div class="summary-bar" id="summary-kecil"></div>
-
-        <div class="action-row">
-          <button class="btn btn-primary" onclick="submitAbsensi('kecil')">
-            💾 Simpan Absensi
-          </button>
-        </div>
-        <hr class="action-divider">
-        <div class="action-row">
-          <button class="btn btn-ghost" onclick="selectAll('kecil')">✅ Semua Hadir</button>
-          <button class="btn btn-ghost" onclick="clearAll('kecil')">✖ Reset Semua</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== PANEL TENGAH ===== -->
-    <section class="panel" id="panel-tengah" role="tabpanel" aria-labelledby="tab-tengah">
-      <div class="panel-card">
-        <div class="panel-header">
-          <div class="panel-badge tengah-badge" aria-hidden="true">🌿</div>
-          <div>
-            <h2>Kelas Tengah</h2>
-            <p>Usia 7–9 Tahun</p>
-          </div>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="date-tengah">📅 Tanggal Ibadah</label>
-            <input type="date" id="date-tengah" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label for="sesi-tengah">🕐 Sesi</label>
-            <select id="sesi-tengah" class="form-input">
-              <option value="1">Sesi 1</option>
-              <option value="2">Sesi 2</option>
-              <option value="3">Sesi 3</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="add-row">
-          <input type="text" id="newName-tengah" class="form-input"
-            placeholder="Nama anak baru..."
-            autocomplete="off" autocorrect="off" autocapitalize="words"
-            onkeydown="if(event.key==='Enter') addStudent('tengah')" />
-          <button class="btn btn-add" onclick="addStudent('tengah')" aria-label="Tambah siswa">
-            ➕ Tambah
-          </button>
-        </div>
-
-        <div class="attendance-hint" id="hint-tengah"></div>
-        <div class="progress-wrap" id="progress-wrap-tengah" style="display:none">
-          <div class="progress-label">
-            <span>Kehadiran</span>
-            <strong id="progress-text-tengah">0 / 0</strong>
-          </div>
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" id="progress-fill-tengah" style="width:0%"></div>
-          </div>
-        </div>
-        <!-- Search bar -->
-        <div class="student-search-wrap">
-          <span class="student-search-icon">🔍</span>
-          <input type="text" id="search-input-tengah" class="student-search-input"
-                 placeholder="Cari nama anak…"
-                 autocomplete="off" autocorrect="off"
-                 oninput="applySearch('tengah', this.value)" />
-          <button class="student-search-clear hidden" id="search-clear-tengah"
-                  onclick="clearSearch('tengah')" aria-label="Hapus pencarian">✕</button>
-        </div>
-
-        <!-- Skeleton loader -->
-        <div class="skeleton-list" id="skeleton-tengah">
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div>
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w85"></div><div class="skeleton-line w50"></div></div></div>
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w60"></div><div class="skeleton-line w35"></div></div></div>
-        </div>
-        <div class="student-list" id="list-tengah" aria-label="Daftar siswa kelas tengah"></div>
-        <div class="summary-bar" id="summary-tengah"></div>
-
-        <div class="action-row">
-          <button class="btn btn-primary" onclick="submitAbsensi('tengah')">💾 Simpan Absensi</button>
-        </div>
-        <hr class="action-divider">
-        <div class="action-row">
-          <button class="btn btn-ghost" onclick="selectAll('tengah')">✅ Semua Hadir</button>
-          <button class="btn btn-ghost" onclick="clearAll('tengah')">✖ Reset Semua</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== PANEL BESAR ===== -->
-    <section class="panel" id="panel-besar" role="tabpanel" aria-labelledby="tab-besar">
-      <div class="panel-card">
-        <div class="panel-header">
-          <div class="panel-badge besar-badge" aria-hidden="true">⭐</div>
-          <div>
-            <h2>Kelas Besar</h2>
-            <p>Usia 10+ Tahun</p>
-          </div>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="date-besar">📅 Tanggal Ibadah</label>
-            <input type="date" id="date-besar" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label for="sesi-besar">🕐 Sesi</label>
-            <select id="sesi-besar" class="form-input">
-              <option value="1">Sesi 1</option>
-              <option value="2">Sesi 2</option>
-              <option value="3">Sesi 3</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="add-row">
-          <input type="text" id="newName-besar" class="form-input"
-            placeholder="Nama anak baru..."
-            autocomplete="off" autocorrect="off" autocapitalize="words"
-            onkeydown="if(event.key==='Enter') addStudent('besar')" />
-          <button class="btn btn-add" onclick="addStudent('besar')" aria-label="Tambah siswa">
-            ➕ Tambah
-          </button>
-        </div>
-
-        <div class="attendance-hint" id="hint-besar"></div>
-        <div class="progress-wrap" id="progress-wrap-besar" style="display:none">
-          <div class="progress-label">
-            <span>Kehadiran</span>
-            <strong id="progress-text-besar">0 / 0</strong>
-          </div>
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" id="progress-fill-besar" style="width:0%"></div>
-          </div>
-        </div>
-        <!-- Search bar -->
-        <div class="student-search-wrap">
-          <span class="student-search-icon">🔍</span>
-          <input type="text" id="search-input-besar" class="student-search-input"
-                 placeholder="Cari nama anak…"
-                 autocomplete="off" autocorrect="off"
-                 oninput="applySearch('besar', this.value)" />
-          <button class="student-search-clear hidden" id="search-clear-besar"
-                  onclick="clearSearch('besar')" aria-label="Hapus pencarian">✕</button>
-        </div>
-
-        <!-- Skeleton loader -->
-        <div class="skeleton-list" id="skeleton-besar">
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div>
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w85"></div><div class="skeleton-line w50"></div></div></div>
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w60"></div><div class="skeleton-line w35"></div></div></div>
-        </div>
-        <div class="student-list" id="list-besar" aria-label="Daftar siswa kelas besar"></div>
-        <div class="summary-bar" id="summary-besar"></div>
-
-        <div class="action-row">
-          <button class="btn btn-primary" onclick="submitAbsensi('besar')">💾 Simpan Absensi</button>
-        </div>
-        <hr class="action-divider">
-        <div class="action-row">
-          <button class="btn btn-ghost" onclick="selectAll('besar')">✅ Semua Hadir</button>
-          <button class="btn btn-ghost" onclick="clearAll('besar')">✖ Reset Semua</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== PANEL KAKAK ===== -->
-    <section class="panel" id="panel-kakak" role="tabpanel" aria-labelledby="tab-kakak">
-      <div class="panel-card">
-        <div class="panel-header">
-          <div class="panel-badge kakak-badge" aria-hidden="true">👑</div>
-          <div>
-            <h2>Kakak Sekming</h2>
-            <p>Kakak Sekolah Minggu</p>
-          </div>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="date-kakak">📅 Tanggal Ibadah</label>
-            <input type="date" id="date-kakak" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label for="sesi-kakak">🕐 Sesi</label>
-            <select id="sesi-kakak" class="form-input">
-              <option value="1">Sesi 1</option>
-              <option value="2">Sesi 2</option>
-              <option value="3">Sesi 3</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="add-row">
-          <input type="text" id="newName-kakak" class="form-input"
-            placeholder="Nama kakak baru..."
-            autocomplete="off" autocorrect="off" autocapitalize="words"
-            onkeydown="if(event.key==='Enter') addStudent('kakak')" />
-          <button class="btn btn-add" onclick="addStudent('kakak')" aria-label="Tambah kakak">
-            ➕ Tambah
-          </button>
-        </div>
-
-        <div class="attendance-hint" id="hint-kakak"></div>
-        <div class="progress-wrap" id="progress-wrap-kakak" style="display:none">
-          <div class="progress-label">
-            <span>Kehadiran</span>
-            <strong id="progress-text-kakak">0 / 0</strong>
-          </div>
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" id="progress-fill-kakak" style="width:0%"></div>
-          </div>
-        </div>
-        <!-- Search bar -->
-        <div class="student-search-wrap">
-          <span class="student-search-icon">🔍</span>
-          <input type="text" id="search-input-kakak" class="student-search-input"
-                 placeholder="Cari nama kakak…"
-                 autocomplete="off" autocorrect="off"
-                 oninput="applySearch('kakak', this.value)" />
-          <button class="student-search-clear hidden" id="search-clear-kakak"
-                  onclick="clearSearch('kakak')" aria-label="Hapus pencarian">✕</button>
-        </div>
-
-        <!-- Skeleton loader -->
-        <div class="skeleton-list" id="skeleton-kakak">
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div>
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w85"></div><div class="skeleton-line w50"></div></div></div>
-          <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line w60"></div><div class="skeleton-line w35"></div></div></div>
-        </div>
-        <div class="student-list" id="list-kakak" aria-label="Daftar kakak sekolah minggu"></div>
-        <div class="summary-bar" id="summary-kakak"></div>
-
-        <div class="action-row">
-          <button class="btn btn-primary" onclick="submitAbsensi('kakak')">💾 Simpan Absensi</button>
-        </div>
-        <hr class="action-divider">
-        <div class="action-row">
-          <button class="btn btn-ghost" onclick="selectAll('kakak')">✅ Semua Hadir</button>
-          <button class="btn btn-ghost" onclick="clearAll('kakak')">✖ Reset Semua</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== PANEL REKAP ===== -->
-    <section class="panel" id="panel-rekap" role="tabpanel" aria-labelledby="tab-rekap">
-      <div class="panel-card">
-        <div class="panel-header">
-          <div class="panel-badge rekap-badge" aria-hidden="true">📊</div>
-          <div>
-            <h2>Rekap Kehadiran</h2>
-            <p>Laporan Bulanan</p>
-          </div>
-        </div>
-
-        <!-- Filter Controls -->
-        <div class="rekap-filter-card">
-          <div class="rekap-filter-row">
-            <div class="rekap-filter-group">
-              <label class="rekap-filter-label">📅 Dari Bulan</label>
-              <select id="rekap-dari" class="form-input" aria-label="Dari bulan"></select>
-            </div>
-            <div class="rekap-filter-sep">—</div>
-            <div class="rekap-filter-group">
-              <label class="rekap-filter-label">📅 Sampai Bulan</label>
-              <select id="rekap-sampai" class="form-input" aria-label="Sampai bulan"></select>
-            </div>
-          </div>
-          <div class="rekap-filter-row">
-            <div class="rekap-filter-group" style="flex:1">
-              <label class="rekap-filter-label">🕐 Filter Sesi</label>
-              <select id="rekap-sesi" class="form-input" aria-label="Filter sesi">
-                <option value="">Semua Sesi</option>
-                <option value="1">Sesi 1</option>
-                <option value="2">Sesi 2</option>
-                <option value="3">Sesi 3</option>
-              </select>
-            </div>
-          </div>
-          <div class="rekap-filter-actions">
-            <button class="btn btn-primary" onclick="loadRekap()">🔍 Tampilkan</button>
-            <button class="btn btn-outline" onclick="openExportModal()">⬇ Export</button>
-          </div>
-        </div>
-
-        <!-- Charts -->
-        <div id="rekap-charts" style="display:none">
-          <div class="chart-tabs">
-            <button class="chart-tab active" onclick="switchChart('bar', this)">📊 Per Tanggal</button>
-            <button class="chart-tab" onclick="switchChart('line', this)">📈 Trend</button>
-            <button class="chart-tab" onclick="switchChart('pie', this)">🍩 Per Kelas</button>
-          </div>
-          <div class="chart-wrap" id="chart-bar-wrap">
-            <canvas id="chartBar"></canvas>
-          </div>
-          <div class="chart-wrap" id="chart-line-wrap" style="display:none">
-            <canvas id="chartLine"></canvas>
-          </div>
-          <div class="chart-wrap chart-wrap-pie" id="chart-pie-wrap" style="display:none">
-            <canvas id="chartPie"></canvas>
-          </div>
-        </div>
-
-        <div id="rekap-content">
-          <div class="empty-state">
-            <div class="empty-icon">📋</div>
-            <p>Pilih rentang bulan dan klik <strong>Tampilkan</strong></p>
-          </div>
-        </div>
-      </div>
-    </section>
-
   </main>
 
-  <footer class="site-footer">
-    <p>© 2026 Beloved Kids Cito &hearts; Melayani dengan Kasih</p>
-  </footer>
-
-  <!-- HELP MODAL -->
-  <div class="modal-overlay" id="helpModal" onclick="if(event.target===this)closeHelp()">
-    <div class="modal-box help-modal-box" role="dialog" aria-modal="true" aria-label="Panduan Penggunaan">
-
-      <div class="help-header">
-        <div class="help-header-text">
-          <div class="help-icon">📖</div>
-          <div>
-            <h3 class="modal-title">Panduan Penggunaan</h3>
-            <p class="modal-sub">Beloved Kids Cito</p>
-          </div>
-        </div>
-        <button class="modal-close" onclick="closeHelp()" aria-label="Tutup">✕</button>
-      </div>
-
-      <!-- Tab navigasi bantuan -->
-      <div class="help-tabs">
-        <button class="help-tab active" onclick="switchHelp('absensi', this)">✏️ Absensi</button>
-        <button class="help-tab" onclick="switchHelp('siswa', this)">👦 Siswa</button>
-        <button class="help-tab" onclick="switchHelp('rekap', this)">📊 Rekap</button>
-        <button class="help-tab" onclick="switchHelp('tips', this)">💡 Tips</button>
-      </div>
-
-      <div class="help-content">
-
-        <!-- Panel: Absensi -->
-        <div class="help-panel active" id="help-absensi">
-          <div class="help-section">
-            <p class="help-lead">Cara mengisi absensi harian dalam 4 langkah mudah.</p>
-
-            <div class="help-step">
-              <div class="help-step-num">1</div>
-              <div>
-                <div class="help-step-title">Pilih Tanggal & Sesi</div>
-                <div class="help-step-desc">Pastikan tanggal ibadah dan sesi sudah benar sebelum mulai menandai kehadiran.</div>
-              </div>
-            </div>
-            <div class="help-step">
-              <div class="help-step-num">2</div>
-              <div>
-                <div class="help-step-title">Ketuk Nama Anak</div>
-                <div class="help-step-desc">Ketuk kartu nama untuk menandai <strong>Hadir</strong> — kartu berubah warna. Ketuk lagi untuk membatalkan.</div>
-              </div>
-            </div>
-            <div class="help-step">
-              <div class="help-step-num">3</div>
-              <div>
-                <div class="help-step-title">Gunakan Shortcut (Opsional)</div>
-                <div class="help-step-desc"><strong>Semua Hadir</strong> — tandai semua sekaligus. <strong>Reset Semua</strong> — batalkan semua tanda.</div>
-              </div>
-            </div>
-            <div class="help-step">
-              <div class="help-step-num">4</div>
-              <div>
-                <div class="help-step-title">Simpan Absensi</div>
-                <div class="help-step-desc">Ketuk <strong>Simpan Absensi</strong>. Jika ada anak yang sudah pernah diabsen di sesi ini, akan muncul konfirmasi sebelum data ditimpa.</div>
-              </div>
-            </div>
-
-            <div class="help-note">
-              <span class="help-note-icon">💡</span>
-              <span>Satu anak bisa hadir di lebih dari satu sesi di hari yang sama — data tiap sesi tersimpan terpisah.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ════════════════════════════════════
-             Panel: Siswa
-             ════════════════════════════════════ -->
-        <div class="help-panel" id="help-siswa">
-          <div class="help-section">
-            <p class="help-lead">Kelola daftar anak — tambah, edit, foto, hapus.</p>
-
-            <div class="help-item">
-              <div class="help-item-icon">➕</div>
-              <div>
-                <div class="help-item-title">Tambah Anak Baru</div>
-                <div class="help-item-desc">Ketik nama di kolom <em>"Nama anak baru..."</em> lalu tap <strong>Tambah</strong> atau tekan Enter. Nama langsung tersimpan ke Google Sheets.</div>
-              </div>
-            </div>
-
-            <div class="help-item">
-              <div class="help-item-icon">✎</div>
-              <div>
-                <div class="help-item-title">Edit Nama / Pindah Kelas</div>
-                <div class="help-item-desc">Tap tombol <strong>✎</strong> di kartu anak untuk ubah nama atau pindahkan ke kelas lain. Riwayat absensi di kelas lama tetap aman.</div>
-              </div>
-            </div>
-
-            <div class="help-item">
-              <div class="help-item-icon">📷</div>
-              <div>
-                <div class="help-item-title">Tambah Foto Wajah</div>
-                <div class="help-item-desc">Di modal Edit, scroll ke bagian <strong>Foto Anak</strong> → tap area 📷 → pilih dari kamera atau galeri. Foto otomatis di-resize &amp; diupload ke <strong>GitHub Repo</strong>, lalu muncul di avatar semua HP yang buka app. Tap <em>🗑 Hapus foto</em> untuk menghapusnya.</div>
-              </div>
-            </div>
-
-            <div class="help-item">
-              <div class="help-item-icon">✕</div>
-              <div>
-                <div class="help-item-title">Hapus Anak</div>
-                <div class="help-item-desc">Tap tombol <strong>✕</strong> di kartu anak. Muncul konfirmasi sebelum data dihapus. Foto di Drive ikut dihapus otomatis.</div>
-              </div>
-            </div>
-
-            <div class="help-note">
-              <span class="help-note-icon">📦</span>
-              <span>Saat anak dipindah kelas, riwayat absensi di kelas lama <strong>tidak hilang</strong> — tetap tersimpan di sheet Absensi.</span>
-            </div>
-          </div>
-        </div>
-
-<!-- ════════════════════════════════════
-             Panel: Rekap
-             ════════════════════════════════════ -->
-        <div class="help-panel" id="help-rekap">
-          <div class="help-section">
-            <p class="help-lead">Laporan kehadiran lintas bulan lengkap dengan grafik.</p>
-
-            <div class="help-step">
-              <div class="help-step-num">1</div>
-              <div>
-                <div class="help-step-title">Pilih Range Bulan</div>
-                <div class="help-step-desc">Tentukan periode <strong>Dari</strong> dan <strong>Sampai</strong> — bisa satu bulan atau beberapa bulan sekaligus (maks 24 bulan ke belakang). Default otomatis 3 bulan terakhir.</div>
-              </div>
-            </div>
-
-            <div class="help-step">
-              <div class="help-step-num">2</div>
-              <div>
-                <div class="help-step-title">Filter Sesi (Opsional)</div>
-                <div class="help-step-desc">Pilih Sesi 1 / 2 / 3 untuk rekap sesi tertentu, atau biarkan <em>Semua Sesi</em> untuk rekap gabungan.</div>
-              </div>
-            </div>
-
-            <div class="help-step">
-              <div class="help-step-num">3</div>
-              <div>
-                <div class="help-step-title">Lihat Grafik Statistik</div>
-                <div class="help-step-desc">Setelah data dimuat, muncul grafik otomatis. Switch tampilan: <strong>Bar</strong> (perbandingan per bulan), <strong>Tren</strong> (garis termasuk total), <strong>Pie</strong> (proporsi per kelas).</div>
-              </div>
-            </div>
-
-            <div class="help-step">
-              <div class="help-step-num">4</div>
-              <div>
-                <div class="help-step-title">Tabel Detail &amp; Export</div>
-                <div class="help-step-desc">Tap baris di tabel untuk lihat nama anak yang hadir di sesi itu. Tap <strong>⬇ Export</strong> untuk unduh data sebagai <strong>CSV</strong>, <strong>Excel (.xlsx)</strong>, atau <strong>PDF</strong>.</div>
-              </div>
-            </div>
-
-            <div class="help-note">
-              <span class="help-note-icon">📊</span>
-              <span>Rekap hanya menampilkan anak yang <strong>Hadir</strong> — anak yang absen tidak dihitung.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ════════════════════════════════════
-             Panel: Tips
-             ════════════════════════════════════ -->
-        <div class="help-panel" id="help-tips">
-          <div class="help-section">
-            <p class="help-lead">Tips biar makin sat set.</p>
-
-            <div class="help-item">
-              <div class="help-item-icon">📱</div>
-              <div>
-                <div class="help-item-title">Pasang di Home Screen HP</div>
-                <div class="help-item-desc"><strong>iPhone:</strong> Safari → tombol Share → "Add to Home Screen". <strong>Android:</strong> Chrome → menu ⋮ → "Tambahkan ke layar utama". Bisa langsung dibuka kayak aplikasi, tanpa buka browser dulu!</div>
-              </div>
-            </div>
-
-            <div class="help-item">
-              <div class="help-item-icon">📷</div>
-              <div>
-                <div class="help-item-title">Tips Foto Anak</div>
-                <div class="help-item-desc">Pakai foto wajah close-up supaya mudah dikenali di avatar kecil. Foto di-resize otomatis ke 300px — tidak perlu kompres dulu. Foto tersimpan di Google Drive dan sync ke semua HP.</div>
-              </div>
-            </div>
-
-            <div class="help-item">
-              <div class="help-item-icon">🌐</div>
-              <div>
-                <div class="help-item-title">Perlu Koneksi Internet</div>
-                <div class="help-item-desc">Semua data disimpan ke Google Sheets &amp; Drive — koneksi internet wajib ada. Upload foto butuh koneksi lebih stabil karena ukuran datanya lebih besar.</div>
-              </div>
-            </div>
-
-            <div class="help-item">
-              <div class="help-item-icon">⚠️</div>
-              <div>
-                <div class="help-item-title">Absensi Ditimpa?</div>
-                <div class="help-item-desc">Kalau simpan absensi di tanggal + sesi + kelas yang sama lebih dari sekali, data lama diganti dengan yang baru. Kalau 0 hadir, muncul konfirmasi dulu sebelum simpan.</div>
-              </div>
-            </div>
-
-            <div class="help-item">
-              <div class="help-item-icon">🔄</div>
-              <div>
-                <div class="help-item-title">Daftar Kosong / Error?</div>
-                <div class="help-item-desc">Refresh halaman dan cek koneksi. Kalau foto gagal upload, coba lagi — ukuran file maks 5MB. Masih error? Hubungi koordinator atau admin gereja.</div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-      </div><!-- end help-content -->
-    </div>
+  <!-- Mascot Petey Panda -->
+  <div class="chibi-pet">
+    <img id="petey-panda" src="Idle.gif" alt="Petey Panda" />
+    <div class="bubble-chat">Ngodingholic~ 🐼</div>
   </div>
 
-  <!-- CONFIRM MODAL -->
-  <div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)closeConfirmModal()">
-    <div class="modal-box confirm-modal-box" role="dialog" aria-modal="true">
-      <div class="confirm-icon-wrap" id="confirmModal-icon">⚠️</div>
-      <h3 class="confirm-title" id="confirmModal-title"></h3>
-      <div class="confirm-body" id="confirmModal-body"></div>
-      <div class="confirm-actions">
-        <button class="btn btn-ghost" id="confirmModal-cancel">Batal</button>
-        <button class="btn btn-primary confirm-btn-ok" id="confirmModal-ok"></button>
-      </div>
-    </div>
-  </div>
+  <script>
+    /* ============================================================
+       MASCOT INTERACTION & RANDOM HORIZONTAL WALK (MAINTENANCE THEME)
+       ============================================================ */
+    document.addEventListener('DOMContentLoaded', () => {
+      const petContainer = document.querySelector('.chibi-pet');
+      const pandaImg = document.getElementById('petey-panda');
+      const bubbleChat = document.querySelector('.bubble-chat');
+      
+      if (pandaImg && petContainer) {
+        const paddingX = 140; 
+        let currentX = window.innerWidth - paddingX;
+        petContainer.style.left = currentX + 'px';
 
-  <!-- EDIT SISWA MODAL -->
-  <div class="modal-overlay" id="editModal" onclick="closeEditModal(event)">
-    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Edit Siswa">
-      <div class="modal-header">
-        <div class="modal-icon" style="font-size:1.3rem">&#9998;</div>
-        <div>
-          <h3 class="modal-title">Edit Siswa</h3>
-          <p class="modal-sub" id="editModal-title"></p>
-        </div>
-        <button class="modal-close" onclick="closeEditModal()" aria-label="Tutup">&#x2715;</button>
-      </div>
+        // 1. Interaksi saat diklik
+        pandaImg.addEventListener('click', () => {
+          pandaImg.src = 'Hit.gif'; 
+          bubbleChat.innerHTML = 'Jangan diganggu woy! 🤕';
+          setTimeout(() => {
+            pandaImg.src = 'Idle.gif';
+            bubbleChat.innerHTML = 'Ngodingholic~ 🐼';
+          }, 600); 
+        });
 
-      <input type="hidden" id="editModal-origKelas" />
-      <input type="hidden" id="editModal-idx" />
-      <input type="hidden" id="editModal-id" />
+        // 2. Event jalan santai
+        setInterval(() => {
+          if (Math.random() < 0.4) {
+            jalanHorizontal();
+          }
+        }, 15000);
 
-      <div class="edit-form">
-        <div class="form-group">
-          <label for="editModal-nama">Nama Anak</label>
-          <input type="text" id="editModal-nama" class="form-input"
-                 autocomplete="off" autocapitalize="words"
-                 onkeydown="if(event.key==='Enter') saveEditModal()" />
-        </div>
+        function jalanHorizontal() {
+          const minX = 20;
+          const maxX = window.innerWidth - paddingX;
+          const targetX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+          
+          if (Math.abs(targetX - currentX) < 60) return;
 
-        <div class="form-group">
-          <label for="editModal-kelas">Kelas</label>
-          <select id="editModal-kelas" class="form-input" onchange="toggleEditInfoBox()">
-            <option value="kecil">&#x1F423; Kelas Kecil (3&ndash;6 thn)</option>
-            <option value="tengah">&#x1F33F; Kelas Tengah (7&ndash;9 thn)</option>
-            <option value="besar">&#x2B50; Kelas Besar (10+ thn)</option>
-            <option value="kakak">&#x1F451; Kakak Sekming</option>
-          </select>
-        </div>
+          const distance = Math.abs(targetX - currentX);
+          const speed = 90; 
+          const duration = distance / speed;
 
-        <div class="edit-info-box" id="editModal-infobox" style="display:none">
-          <span>&#x1F4E6;</span>
-          <span>Riwayat absensi lama tetap tersimpan di kelas sebelumnya.</span>
-        </div>
+          petContainer.style.transition = `left ${duration}s linear`;
+          pandaImg.src = 'Walk.gif';
+          bubbleChat.innerHTML = 'Geser dikit, ngepel dulu~ 🚶‍♂️';
 
-        <!-- ── FOTO SECTION ── -->
-        <div class="form-group foto-group">
-          <label>Foto Anak <span class="label-opt">(sync ke GitHub)</span></label>
+          if (targetX < currentX) {
+            pandaImg.style.transform = 'scaleX(-1)';
+          } else {
+            pandaImg.style.transform = 'scaleX(1)';
+          }
 
-          <!-- Current foto / upload area -->
-          <div class="foto-upload-area" id="fotoUploadArea"
-               onclick="document.getElementById('fotoFileInput').click()"
-               role="button" tabindex="0"
-               onkeydown="if(event.key==='Enter')document.getElementById('fotoFileInput').click()"
-               aria-label="Upload foto">
-            <img id="fotoPreview" class="foto-preview hidden" alt="Preview foto" />
-            <div class="foto-placeholder" id="fotoPlaceholder">
-              <span class="foto-icon">📷</span>
-              <span class="foto-hint">Ketuk untuk pilih foto</span>
-              <span class="foto-sub">JPG / PNG · auto-resize 300px</span>
-            </div>
-            <div class="foto-uploading hidden" id="fotoUploading">
-              <div class="foto-spinner"></div>
-              <span>Mengupload ke GitHub...</span>
-            </div>
-          </div>
-          <input type="file" id="fotoFileInput" accept="image/jpeg,image/png,image/webp"
-                 style="display:none" onchange="handleFotoUpload(event)" />
+          currentX = targetX;
+          petContainer.style.left = currentX + 'px';
 
-          <button class="btn-remove-foto hidden" id="btnRemoveFoto"
-                  onclick="event.stopPropagation(); confirmRemoveFoto()">
-            🗑 Hapus foto
-          </button>
-        </div>
-      </div>
+          setTimeout(() => {
+            pandaImg.src = 'Idle.gif';
+            bubbleChat.innerHTML = 'Bantu nyapu server~ 🐼';
+          }, duration * 1000);
+        }
+        
+        window.addEventListener('resize', () => {
+          const maxX = window.innerWidth - paddingX;
+          if (currentX > maxX) {
+            currentX = maxX;
+            petContainer.style.left = currentX + 'px';
+          }
+        });
+      }
+    });
+  </script>
 
-      <div class="edit-actions">
-        <button class="btn btn-ghost" onclick="closeEditModal()">Batal</button>
-        <button class="btn btn-primary" id="btnSaveEdit" onclick="saveEditModal()" style="min-height:48px;width:auto;padding:12px 28px">
-          &#x1F4BE; Simpan
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- EXPORT MODAL -->
-  <div class="modal-overlay" id="exportModal" onclick="closeExportModal(event)">
-    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Pilih Format Export">
-      <div class="modal-header">
-        <div class="modal-icon">⬇</div>
-        <div>
-          <h3 class="modal-title">Export Rekap</h3>
-          <p class="modal-sub">Pilih format file yang kamu mau</p>
-        </div>
-        <button class="modal-close" onclick="closeExportModal()" aria-label="Tutup">✕</button>
-      </div>
-
-      <div class="export-options">
-        <button class="export-opt" onclick="exportCSV()">
-          <div class="export-opt-icon csv-icon">CSV</div>
-          <div class="export-opt-body">
-            <strong>CSV</strong>
-            <span>Comma Separated · cocok buat import ke Google Sheets / Excel manual</span>
-          </div>
-          <div class="export-opt-arrow">›</div>
-        </button>
-
-        <button class="export-opt" onclick="exportExcel()">
-          <div class="export-opt-icon xlsx-icon">XLS</div>
-          <div class="export-opt-body">
-            <strong>Excel (.xlsx)</strong>
-            <span>Langsung buka di Microsoft Excel atau Google Sheets</span>
-          </div>
-          <div class="export-opt-arrow">›</div>
-        </button>
-
-        <button class="export-opt" onclick="exportPDF()">
-          <div class="export-opt-icon pdf-icon">PDF</div>
-          <div class="export-opt-body">
-            <strong>PDF</strong>
-            <span>Siap cetak · rapi untuk laporan atau arsip</span>
-          </div>
-          <div class="export-opt-arrow">›</div>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Hidden PDF print area -->
-  <div id="pdf-print-area" style="display:none"></div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="app.js"></script>
 </body>
 </html>
